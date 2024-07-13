@@ -1,11 +1,12 @@
-import React from 'react'
+import React from 'react';
+import UploadAudio from '../UploadAudio.jsx';
 
-function HomePage() {
-  return (
-    <div>
-      
-    </div>
-  )
-}
+const HomePage = ({ history }) => {
+	return (
+		<div>
+			<UploadAudio history={history} />
+		</div>
+	);
+};
 
-export default HomePage
+export default HomePage;
