@@ -6,8 +6,6 @@ import { FileContextProvider } from './contexts/fileContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <FileContextProvider>
-        <App />
-      </FileContextProvider>
+      <App />
   </React.StrictMode>,
 )

@@ -5,9 +5,11 @@ export function App() {
   
 
   return (
-    <>
-      <AudioWaveform/ >
-    </>
+    <FileContextProvider>
+        <div>
+          <RouterProvider router={router} />
+        </div>   
+    </FileContextProvider>
   )
 }
 
