@@ -1,11 +1,12 @@
 import './App.css'
+import AudioWaveform from './components/AudioWaveform.jsx'
 
-function App() {
+export function App() {
   
 
   return (
     <>
-      
+      <AudioWaveform/ >
     </>
   )
 }
