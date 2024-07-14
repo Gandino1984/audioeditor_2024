@@ -212,19 +212,18 @@ const AudioWaveform = () => {
             <div className='all-controls'>
                 <div className='left-container'>
                     <button onClick={handlePlayPause} disabled={!isReady}>
-                        {playing ? <i className="material-icons">pause</i> : <i className="material-icons">play_arrow</i>}
+                        {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
                     </button>
                     <button onClick={handleReload} disabled={!isReady}>
-                        <i className="material-icons">replay</i>
+                    <ion-icon name="refresh"></ion-icon>
                     </button>
                     <button onClick={handleTrim} disabled={!isReady}>
-                        <i className="material-icons">content_cut</i>
-                        Trim
+                        <ion-icon name="cut"></ion-icon>
                     </button>
                 </div>
                 <div className='right-container'>
                     <div className='volume-slide-container'>
-                        <i className="material-icons">remove_circle</i>
+                        <ion-icon name="remove"></ion-icon>
                         <input
                             type='range'
                             min='1'
@@ -234,13 +233,13 @@ const AudioWaveform = () => {
                             className='slider zoom-slider'
                             disabled={!isReady}
                         />
-                        <i className="material-icons">add_circle</i>
+                        <ion-icon name="add"></ion-icon>
                     </div>
                     <div className='volume-slide-container'>
                         {volume > 0 ? (
-                            <i className="material-icons">volume_up</i>
+                            <ion-icon name="volume-high"></ion-icon>
                         ) : (
-                            <i className="material-icons">volume_off</i>
+                            <ion-icon name="volume-low"></ion-icon>
                         )}
                         <input
                             type='range'
@@ -254,7 +253,7 @@ const AudioWaveform = () => {
                         />
                     </div>
                 </div>
-            </div>a
+            </div>
         </section>
     );
 };
