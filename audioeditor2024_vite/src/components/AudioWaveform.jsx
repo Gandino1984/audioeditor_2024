@@ -29,10 +29,10 @@ const AudioWaveform = () => {
                         container: wavesurferRef.current,
                         scrollParent: true,
                         autoCenter: true,
-                        cursorColor: 'violet',
+                        cursorColor: 'orange',
                         loopSelection: true,
-                        waveColor: '#211027',
-                        progressColor: '#69207F',
+                        waveColor: '#7b817f',
+                        progressColor: '#9c501d',
                         responsive: true,
                         plugins: [
                             TimelinePlugin.create({
@@ -211,19 +211,20 @@ const AudioWaveform = () => {
             <div ref={timelineRef} />
             <div className='all-controls'>
                 <div className='left-container'>
-                    <button onClick={handlePlayPause} disabled={!isReady}>
-                        {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
+                    <button className="button-orange" onClick={handlePlayPause} disabled={!isReady}>
+                        {playing ? <ion-icon name="pause" style={{ fontSize: '24px' }}></ion-icon> : <ion-icon name="play" style={{ fontSize: '24px' }}></ion-icon>}
                     </button>
-                    <button onClick={handleReload} disabled={!isReady}>
-                    <ion-icon name="refresh"></ion-icon>
+                    <button className="button-orange" onClick={handleReload} disabled={!isReady}>
+                        <ion-icon name="refresh" style={{ fontSize: '24px' }}></ion-icon>
                     </button>
-                    <button onClick={handleTrim} disabled={!isReady}>
-                        <ion-icon name="cut"></ion-icon>
+                    <button className="button-orange" onClick={handleTrim} disabled={!isReady}>
+                        <ion-icon name="cut" style={{ fontSize: '24px' }}></ion-icon>
                     </button>
                 </div>
                 <div className='right-container'>
                     <div className='volume-slide-container'>
-                        <ion-icon name="remove"></ion-icon>
+                        {/* <ion-icon name="remove"></ion-icon> */}
+                        zoom
                         <input
                             type='range'
                             min='1'
@@ -233,14 +234,15 @@ const AudioWaveform = () => {
                             className='slider zoom-slider'
                             disabled={!isReady}
                         />
-                        <ion-icon name="add"></ion-icon>
+                        {/* <ion-icon name="add"></ion-icon> */}
                     </div>
                     <div className='volume-slide-container'>
-                        {volume > 0 ? (
+                        volume
+                        {/* {volume > 0 ? (
                             <ion-icon name="volume-high"></ion-icon>
                         ) : (
                             <ion-icon name="volume-low"></ion-icon>
-                        )}
+                        )} */}
                         <input
                             type='range'
                             min='0'
@@ -256,6 +258,9 @@ const AudioWaveform = () => {
             </div>
         </section>
     );
+    
+    
+    
 };
 
 export default AudioWaveform;
