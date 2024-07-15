@@ -269,136 +269,108 @@ const AudioWaveform = () => {
                         newData.set(oldData.subarray(startSamples, endSamples), 0);
                     }
                 }
-                
-                console.log("New buffer created:", newBuffer);
-                const wavBuffer = audioBufferToWav(newBuffer);
-                const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
-                const wavURL = URL.createObjectURL(wavBlob);
-    
-                wavesurferObjRef.current.load(wavURL);
-                wavesurferObjRef.current.on('ready', () => {
-                    setDuration(newBuffer.duration);
-                    setZoom(1);
-                    wavesurferObjRef.current.zoom(1);
-                    regionsPluginRef.current.clearRegions();
-                    console.log('Trim completed and waveform updated.');
-                    setIsTrimming(false);
-                    setIsTrimmed(true);
-                });
+
+                const trimmedAudioBlob = audioBufferToWavBlob(newBuffer);
+                const trimmedAudioURL = URL.createObjectURL(trimmedAudioBlob);
+                console.log("Trimmed audio URL:", trimmedAudioURL);
+                wavesurferObjRef.current.load(trimmedAudioURL);
+                setIsTrimmed(true);
+                setIsTrimming(false);
             })
             .catch(error => {
-                console.error('Error trimming audio:', error);
+                console.error("Error trimming audio:", error);
                 setIsTrimming(false);
             });
     };
 
-
-    const audioBufferToWav = (buffer) => {
-        let numOfChan = buffer.numberOfChannels,
-            length = buffer.length * numOfChan * 2 + 44,
-            bufferArray = new ArrayBuffer(length),
-            view = new DataView(bufferArray),
+    const audioBufferToWavBlob = (audioBuffer) => {
+        const numOfChan = audioBuffer.numberOfChannels,
+            length = audioBuffer.length * numOfChan * 2 + 44,
+            buffer = new ArrayBuffer(length),
+            view = new DataView(buffer),
             channels = [],
-            i,
-            sample,
-            offset = 0,
-            pos = 0;
+            sampleRate = audioBuffer.sampleRate,
+            bitDepth = 16;
 
-        // write WAVE header
-        setUint32(0x46464952); // "RIFF"
-        setUint32(length - 8); // file length - 8
-        setUint32(0x45564157); // "WAVE"
+        let offset = 0;
 
-        setUint32(0x20746d66); // "fmt " chunk
-        setUint32(16); // length = 16
-        setUint16(1); // PCM (uncompressed)
-        setUint16(numOfChan);
-        setUint32(buffer.sampleRate);
-        setUint32(buffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
-        setUint16(numOfChan * 2); // block-align
-        setUint16(16); // 16-bit (hardcoded in this demo)
+        writeString(view, offset, 'RIFF'); offset += 4;
+        view.setUint32(offset, length - 8, true); offset += 4;
+        writeString(view, offset, 'WAVE'); offset += 4;
+        writeString(view, offset, 'fmt '); offset += 4;
+        view.setUint32(offset, 16, true); offset += 4;
+        view.setUint16(offset, 1, true); offset += 2;
+        view.setUint16(offset, numOfChan, true); offset += 2;
+        view.setUint32(offset, sampleRate, true); offset += 4;
+        view.setUint32(offset, sampleRate * numOfChan * 2, true); offset += 4;
+        view.setUint16(offset, numOfChan * 2, true); offset += 2;
+        view.setUint16(offset, bitDepth, true); offset += 2;
+        writeString(view, offset, 'data'); offset += 4;
+        view.setUint32(offset, length - offset - 4, true); offset += 4;
 
-        setUint32(0x61746164); // "data" - chunk
-        setUint32(length - pos - 4); // chunk length
+        for (let i = 0; i < audioBuffer.numberOfChannels; i++)
+            channels.push(audioBuffer.getChannelData(i));
 
-        // write interleaved data
-        for (i = 0; i < buffer.numberOfChannels; i++) {
-            channels.push(buffer.getChannelData(i));
-        }
-
-        while (pos < length) {
-            for (i = 0; i < numOfChan; i++) {
-                sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
-                sample = (0.5 + sample * 32767) | 0; // scale to 16-bit signed int
-                view.setInt16(pos, sample, true); // write 16-bit sample
-                pos += 2;
+        for (let i = 0; i < audioBuffer.length; i++)
+            for (let j = 0; j < numOfChan; j++) {
+                const sample = Math.max(-1, Math.min(1, channels[j][i]));
+                view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                offset += 2;
             }
-            offset++; // next source sample
-        }
 
-        return bufferArray;
+        return new Blob([buffer], { type: 'audio/wav' });
 
-        function setUint16(data) {
-            view.setUint16(pos, data, true);
-            pos += 2;
-        }
-
-        function setUint32(data) {
-            view.setUint32(pos, data, true);
-            pos += 4;
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
         }
     };
 
     return (
-        <section className='waveform-container'>
-            <div ref={wavesurferRef} style={{ width: '100%', height: '128px' }} />
-            <div ref={timelineRef} />
-            <div className='all-controls'>
-                <div className='left-container'>
-                    <button className="button-orange" onClick={handlePlayPause} disabled={!isReady}>
-                        {playing ? <ion-icon name="pause" style={{ fontSize: '24px' }}></ion-icon> : <ion-icon name="play" style={{ fontSize: '24px' }}></ion-icon>}
-                    </button>
-                    <button className="button-orange" onClick={handleReload} disabled={!isReady}>
-                        <ion-icon name="refresh" style={{ fontSize: '24px' }}></ion-icon>
-                    </button>
-                    
-                    <button className="button-orange" onClick={handleInnerTrim} disabled={!isReady || isTrimming}>
-                        {isTrimming ? 'Trimming...' :  <ion-icon name="cut" style={{ fontSize: '24px' }}></ion-icon>}
-                    </button>
-
-                    <button className="button-orange" onClick={handleOuterTrim} disabled={!isReady || isTrimming}>
-                        {isTrimming ? 'Trimming...' : 'OUTER TRIM' }
-                    </button>
-                </div>
-                <div className='right-container'>
-                    <div className='volume-slide-container'>
-                        <span><ion-icon name="search"></ion-icon></span>
-                        <input
-                            type='range'
-                            min='1'
-                            max='1000'
-                            value={zoom}
-                            onChange={handleZoomChange}
-                            className='slider zoom-slider'
-                            disabled={!isReady}
-                        />
-                    </div>
-                    <div className='volume-slide-container'>
-                        <span><ion-icon name="volume-high"></ion-icon></span>
-                        <input
-                            type='range'
-                            min='0'
-                            max='1'
-                            step='0.05'
-                            value={volume}
-                            onChange={handleVolumeChange}
-                            className='slider volume-slider'
-                            disabled={!isReady}
-                        />
-                    </div>
-                </div>
+        <div className="audio-waveform">
+            <div className="waveform-container">
+                <div ref={wavesurferRef} className="waveform" />
+                <div ref={timelineRef} className="timeline" />
             </div>
-        </section>
+            <div className="controls">
+                <button onClick={handlePlayPause} disabled={!isReady} className="control-button">
+                    {playing ? 'PAUSE' : 'PLAY'}
+                </button>
+                <button onClick={handleReload} disabled={!isReady} className="control-button">
+                    REPLAY
+                </button>
+                <div className="volume-control">
+                    <label>Volume:</label>
+                    <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="volume-slider"
+                    />
+                </div>
+                <div className="zoom-control">
+                    <label>Zoom:</label>
+                    <input
+                        type="range"
+                        min="1"
+                        max="100"
+                        value={zoom}
+                        onChange={handleZoomChange}
+                        className="zoom-slider"
+                    />
+                </div>
+                <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
+                    {isTrimming ? 'Trimming...' : 'OUTER TRIM'}
+                </button>
+                <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
+                    {isTrimming ? 'Trimming...' : 'INNER TRIM'}
+                </button>
+            </div>
+        </div>
     );
 };
 
