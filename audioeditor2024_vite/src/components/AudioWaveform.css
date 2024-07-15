@@ -61,7 +61,7 @@
 /* Container for controls */
 .all-controls {
     display: flex;
-    justify-content: center;
+    justify-content: center; /* Center buttons */
     align-items: center;
     margin-top: 16px;
 }
@@ -71,10 +71,10 @@
     align-items: center;
 }
 
-.center-container {
+.right-container {
     display: flex;
     align-items: center;
-    margin-left: 16px;
+    margin-left: auto; /* Push sliders to the right */
 }
 
 .volume-slide-container {
@@ -92,4 +92,5 @@
 .zoom-slider,
 .volume-slider {
     width: 100px;
+    margin-left: 8px; /* Add margin between sliders */
 }

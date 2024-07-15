@@ -53,10 +53,9 @@ const AudioWaveform = () => {
                         if (isMounted) {
                             console.log('WaveSurfer is ready');
                             setIsReady(true);
-                            setDuration(Math.floor(wavesurferObjRef.current.getDuration()));
-                            regionsPluginRef.current.enableDragSelection({
-                                color: 'hsla(210, 100%, 50%, 0.4)', // Blue color with 40% opacity
-                            });
+                            const duration = Math.floor(wavesurferObjRef.current.getDuration());
+                            setDuration(duration);
+                            regionsPluginRef.current.clearRegions();
                         }
                     });
 
@@ -67,10 +66,22 @@ const AudioWaveform = () => {
                     regionsPluginRef.current.on('region-updated', (region) => {
                         console.log("Region updated:", region);
                         const regions = regionsPluginRef.current.getRegions();
-                        if (Object.keys(regions).length > 1) {
-                            const keys = Object.keys(regions);
-                            regions[keys[0]].remove();
+                        if (regions.length > 1) {
+                            regions.slice(0, -1).forEach(r => r.remove());
                         }
+                    });
+
+                    regionsPluginRef.current.on('region-created', (region) => {
+                        console.log("Region created:", region);
+                        const regions = regionsPluginRef.current.getRegions();
+                        if (regions.length > 1) {
+                            regions.slice(0, -1).forEach(r => r.remove());
+                        }
+                    });
+
+                    regionsPluginRef.current.enableDragSelection({
+                        color: 'hsla(210, 100%, 50%, 0.4)',
+                        maxRegions: 1,
                     });
 
                     if (fileURL) {
@@ -114,18 +125,6 @@ const AudioWaveform = () => {
         }
     }, [zoom, isReady]);
 
-    useEffect(() => {
-        if (duration && regionsPluginRef.current) {
-            console.log("Creating initial region");
-            const region = regionsPluginRef.current.addRegion({
-                start: Math.floor(duration / 2) - Math.floor(duration) / 5,
-                end: Math.floor(duration / 2),
-                color: 'hsla(210, 100%, 50%, 0.4)', // Blue color with 40% opacity
-            });
-            console.log("Created region:", region);
-        }
-    }, [duration]);
-
     const handlePlayPause = () => {
         if (wavesurferObjRef.current && isReady) {
             wavesurferObjRef.current.playPause();
@@ -155,10 +154,9 @@ const AudioWaveform = () => {
             console.log("WaveSurfer and regions plugin are ready");
             const regions = regionsPluginRef.current.getRegions();
             console.log("Regions:", regions);
-            if (Object.keys(regions).length > 0) {
+            if (regions.length === 1) {
                 setIsTrimming(true);
-                const regionKey = Object.keys(regions)[0];
-                const region = regions[regionKey];
+                const region = regions[0];
                 const start = region.start;
                 const end = region.end;
                 console.log(`Selected region: start=${start}, end=${end}`);
@@ -205,19 +203,14 @@ const AudioWaveform = () => {
                         const wavURL = URL.createObjectURL(wavBlob);
 
                         wavesurferObjRef.current.load(wavURL);
-                        setDuration(newDuration);
-                        setZoom(1);
-                        wavesurferObjRef.current.zoom(1);
-                        regionsPluginRef.current.clearRegions();
-
-                        regionsPluginRef.current.addRegion({
-                            start: 0,
-                            end: newDuration,
-                            color: 'hsla(210, 100%, 50%, 0.4)', // Blue color with 40% opacity
+                        wavesurferObjRef.current.on('ready', () => {
+                            setDuration(newDuration);
+                            setZoom(1);
+                            wavesurferObjRef.current.zoom(1);
+                            regionsPluginRef.current.clearRegions();
+                            console.log('Trim completed and waveform updated.');
+                            setIsTrimming(false);
                         });
-
-                        console.log('Trim completed and waveform updated.');
-                        setIsTrimming(false);
                     })
                     .catch(error => {
                         console.error('Error trimming audio:', error);
@@ -228,9 +221,6 @@ const AudioWaveform = () => {
             }
         } else {
             console.log('WaveSurfer is not ready or regions plugin is not initialized.');
-            console.log('wavesurferObjRef.current:', wavesurferObjRef.current);
-            console.log('isReady:', isReady);
-            console.log('regionsPluginRef.current:', regionsPluginRef.current);
         }
     };
 
@@ -303,7 +293,7 @@ const AudioWaveform = () => {
                         <ion-icon name="refresh" style={{ fontSize: '24px' }}></ion-icon>
                     </button>
                     <button className="button-orange" onClick={handleTrim} disabled={!isReady || isTrimming}>
-                        {isTrimming ? 'Trimming...' : 'TRIM' }
+                        {isTrimming ? 'Trimming...' : 'OUTER TRIM' }
                     </button>
                 </div>
                 <div className='right-container'>
