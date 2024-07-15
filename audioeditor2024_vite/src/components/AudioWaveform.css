@@ -88,9 +88,16 @@
     margin-right: 8px;
     font-size: 14px;
     color: #333;
+    /* color: hsla(207, 100%, 50%, 0.5); */
 }
 
 .zoom-slider,
 .volume-slider {
     width: 100px;
+}
+
+/* Custom selection color for regions */
+.wavesurfer-region {
+    background-color: rgba(0, 255, 0, 0.7); /* Green with 40% opacity */
+    border-color: #00ff00; /* Solid green border */
 }

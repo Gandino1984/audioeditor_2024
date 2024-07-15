@@ -54,7 +54,9 @@ const AudioWaveform = () => {
                             console.log('WaveSurfer is ready');
                             setIsReady(true);
                             setDuration(Math.floor(wavesurferObjRef.current.getDuration()));
-                            regionsPluginRef.current.enableDragSelection({});
+                            regionsPluginRef.current.enableDragSelection({
+                                color: 'hsla(210, 100%, 50%, 0.4)', // Blue color with 40% opacity
+                            });
                         }
                     });
 
@@ -118,7 +120,7 @@ const AudioWaveform = () => {
             const region = regionsPluginRef.current.addRegion({
                 start: Math.floor(duration / 2) - Math.floor(duration) / 5,
                 end: Math.floor(duration / 2),
-                color: 'hsla(265, 100%, 86%, 0.4)',
+                color: 'hsla(210, 100%, 50%, 0.4)', // Blue color with 40% opacity
             });
             console.log("Created region:", region);
         }
@@ -147,7 +149,7 @@ const AudioWaveform = () => {
         setZoom(parseInt(e.target.value));
     };
 
-    const handleTrim = async () => {
+    const handleTrim = () => {
         console.log("Trim button clicked");
         if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
             console.log("WaveSurfer and regions plugin are ready");
@@ -171,56 +173,56 @@ const AudioWaveform = () => {
 
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-                try {
-                    const response = await fetch(fileURL);
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    
-                    const arrayBuffer = await response.arrayBuffer();
-                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                    console.log("Audio buffer decoded:", audioBuffer);
-
-                    const newDuration = end - start;
-                    const newLength = Math.floor(newDuration * audioBuffer.sampleRate);
-                    const newBuffer = audioContext.createBuffer(
-                        audioBuffer.numberOfChannels,
-                        newLength,
-                        audioBuffer.sampleRate
-                    );
-
-                    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-                        const oldData = audioBuffer.getChannelData(channel);
-                        const newData = newBuffer.getChannelData(channel);
-                        for (let i = 0; i < newLength; i++) {
-                            newData[i] = oldData[Math.floor(start * audioBuffer.sampleRate) + i];
+                fetch(fileURL)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
                         }
-                    }
+                        return response.arrayBuffer();
+                    })
+                    .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+                    .then(audioBuffer => {
+                        console.log("Audio buffer decoded:", audioBuffer);
+                        const newDuration = end - start;
+                        const newLength = Math.floor(newDuration * audioBuffer.sampleRate);
+                        const newBuffer = audioContext.createBuffer(
+                            audioBuffer.numberOfChannels,
+                            newLength,
+                            audioBuffer.sampleRate
+                        );
 
-                    console.log("New buffer created:", newBuffer);
+                        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                            const oldData = audioBuffer.getChannelData(channel);
+                            const newData = newBuffer.getChannelData(channel);
+                            for (let i = 0; i < newLength; i++) {
+                                newData[i] = oldData[Math.floor(start * audioBuffer.sampleRate) + i];
+                            }
+                        }
 
-                    // Convert the buffer to a Blob
-                    const wavBuffer = audioBufferToWav(newBuffer);
-                    const newAudioBlob = new Blob([new DataView(wavBuffer)], { type: 'audio/wav' });
+                        console.log("New buffer created:", newBuffer);
+                        const wavBuffer = audioBufferToWav(newBuffer);
+                        const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+                        const wavURL = URL.createObjectURL(wavBlob);
 
-                    // Load the Blob into WaveSurfer
-                    wavesurferObjRef.current.loadBlob(newAudioBlob);
+                        wavesurferObjRef.current.load(wavURL);
+                        setDuration(newDuration);
+                        setZoom(1);
+                        wavesurferObjRef.current.zoom(1);
+                        regionsPluginRef.current.clearRegions();
 
-                    setDuration(newDuration);
-                    setZoom(1);
-                    wavesurferObjRef.current.zoom(1);
-                    regionsPluginRef.current.clearRegions();
+                        regionsPluginRef.current.addRegion({
+                            start: 0,
+                            end: newDuration,
+                            color: 'hsla(210, 100%, 50%, 0.4)', // Blue color with 40% opacity
+                        });
 
-                    regionsPluginRef.current.addRegion({
-                        start: 0,
-                        end: newDuration,
-                        color: 'hsla(265, 100%, 86%, 0.4)',
+                        console.log('Trim completed and waveform updated.');
+                        setIsTrimming(false);
+                    })
+                    .catch(error => {
+                        console.error('Error trimming audio:', error);
+                        setIsTrimming(false);
                     });
-
-                    console.log('Trim completed and waveform updated.');
-                    setIsTrimming(false);
-                } catch (error) {
-                    console.error('Error trimming audio:', error);
-                    setIsTrimming(false);
-                }
             } else {
                 console.log('No region selected for trimming.');
             }
@@ -232,14 +234,14 @@ const AudioWaveform = () => {
         }
     };
 
-    // Helper function to convert AudioBuffer to WAV
     const audioBufferToWav = (buffer) => {
         let numOfChan = buffer.numberOfChannels,
             length = buffer.length * numOfChan * 2 + 44,
             bufferArray = new ArrayBuffer(length),
             view = new DataView(bufferArray),
             channels = [],
-            sampleRate = buffer.sampleRate,
+            i,
+            sample,
             offset = 0,
             pos = 0;
 
@@ -252,8 +254,8 @@ const AudioWaveform = () => {
         setUint32(16); // length = 16
         setUint16(1); // PCM (uncompressed)
         setUint16(numOfChan);
-        setUint32(sampleRate);
-        setUint32(sampleRate * 2 * numOfChan); // avg. bytes/sec
+        setUint32(buffer.sampleRate);
+        setUint32(buffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
         setUint16(numOfChan * 2); // block-align
         setUint16(16); // 16-bit (hardcoded in this demo)
 
@@ -261,20 +263,22 @@ const AudioWaveform = () => {
         setUint32(length - pos - 4); // chunk length
 
         // write interleaved data
-        for (let i = 0; i < buffer.numberOfChannels; i++)
+        for (i = 0; i < buffer.numberOfChannels; i++) {
             channels.push(buffer.getChannelData(i));
+        }
 
         while (pos < length) {
-            for (let i = 0; i < numOfChan; i++) {
-                // interleave channels
-                const sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
-                view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true); // convert to 16-bit PCM
+            for (i = 0; i < numOfChan; i++) {
+                sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+                sample = (0.5 + sample * 32767) | 0; // scale to 16-bit signed int
+                view.setInt16(pos, sample, true); // write 16-bit sample
                 pos += 2;
             }
             offset++; // next source sample
         }
 
-        // setUint32 and setUint16 functions
+        return bufferArray;
+
         function setUint16(data) {
             view.setUint16(pos, data, true);
             pos += 2;
@@ -284,8 +288,6 @@ const AudioWaveform = () => {
             view.setUint32(pos, data, true);
             pos += 4;
         }
-
-        return bufferArray;
     };
 
     return (
@@ -301,7 +303,7 @@ const AudioWaveform = () => {
                         <ion-icon name="refresh" style={{ fontSize: '24px' }}></ion-icon>
                     </button>
                     <button className="button-orange" onClick={handleTrim} disabled={!isReady || isTrimming}>
-                        {isTrimming ? 'Trimming...' : <ion-icon name="cut" style={{ fontSize: '24px' }}></ion-icon>}
+                        {isTrimming ? 'Trimming...' : 'TRIM' }
                     </button>
                 </div>
                 <div className='right-container'>
