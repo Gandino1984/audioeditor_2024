@@ -147,7 +147,7 @@ const AudioWaveform = () => {
         setZoom(parseInt(e.target.value));
     };
 
-    const handleTrim = () => {
+    const handleTrim = async () => {
         console.log("Trim button clicked");
         if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
             console.log("WaveSurfer and regions plugin are ready");
@@ -170,48 +170,57 @@ const AudioWaveform = () => {
                 console.log(`Trimming audio from ${start} to ${end}`);
 
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                fetch(fileURL)
-                    .then(response => response.arrayBuffer())
-                    .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-                    .then(audioBuffer => {
-                        console.log("Audio buffer decoded:", audioBuffer);
-                        const newDuration = end - start;
-                        const newLength = Math.floor(newDuration * audioBuffer.sampleRate);
-                        const newBuffer = audioContext.createBuffer(
-                            audioBuffer.numberOfChannels,
-                            newLength,
-                            audioBuffer.sampleRate
-                        );
 
-                        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-                            const oldData = audioBuffer.getChannelData(channel);
-                            const newData = newBuffer.getChannelData(channel);
-                            for (let i = 0; i < newLength; i++) {
-                                newData[i] = oldData[Math.floor(start * audioBuffer.sampleRate) + i];
-                            }
+                try {
+                    const response = await fetch(fileURL);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    console.log("Audio buffer decoded:", audioBuffer);
+
+                    const newDuration = end - start;
+                    const newLength = Math.floor(newDuration * audioBuffer.sampleRate);
+                    const newBuffer = audioContext.createBuffer(
+                        audioBuffer.numberOfChannels,
+                        newLength,
+                        audioBuffer.sampleRate
+                    );
+
+                    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                        const oldData = audioBuffer.getChannelData(channel);
+                        const newData = newBuffer.getChannelData(channel);
+                        for (let i = 0; i < newLength; i++) {
+                            newData[i] = oldData[Math.floor(start * audioBuffer.sampleRate) + i];
                         }
+                    }
 
-                        console.log("New buffer created:", newBuffer);
-                        wavesurferObjRef.current.loadDecodedBuffer(newBuffer);
-                        setDuration(newDuration);
-                        setZoom(1);
-                        wavesurferObjRef.current.zoom(1);
-                        regionsPluginRef.current.clearRegions();
+                    console.log("New buffer created:", newBuffer);
 
-                        regionsPluginRef.current.addRegion({
-                            start: 0,
-                            end: newDuration,
-                            color: 'hsla(265, 100%, 86%, 0.4)',
-                        });
+                    // Convert the buffer to a Blob
+                    const wavBuffer = audioBufferToWav(newBuffer);
+                    const newAudioBlob = new Blob([new DataView(wavBuffer)], { type: 'audio/wav' });
 
-                        console.log('Trim completed and waveform updated.');
-                        setIsTrimming(false);
-                    })
-                    .catch(error => {
-                        console.error('Error trimming audio:', error);
-                        setIsTrimming(false);
+                    // Load the Blob into WaveSurfer
+                    wavesurferObjRef.current.loadBlob(newAudioBlob);
+
+                    setDuration(newDuration);
+                    setZoom(1);
+                    wavesurferObjRef.current.zoom(1);
+                    regionsPluginRef.current.clearRegions();
+
+                    regionsPluginRef.current.addRegion({
+                        start: 0,
+                        end: newDuration,
+                        color: 'hsla(265, 100%, 86%, 0.4)',
                     });
+
+                    console.log('Trim completed and waveform updated.');
+                    setIsTrimming(false);
+                } catch (error) {
+                    console.error('Error trimming audio:', error);
+                    setIsTrimming(false);
+                }
             } else {
                 console.log('No region selected for trimming.');
             }
@@ -221,6 +230,62 @@ const AudioWaveform = () => {
             console.log('isReady:', isReady);
             console.log('regionsPluginRef.current:', regionsPluginRef.current);
         }
+    };
+
+    // Helper function to convert AudioBuffer to WAV
+    const audioBufferToWav = (buffer) => {
+        let numOfChan = buffer.numberOfChannels,
+            length = buffer.length * numOfChan * 2 + 44,
+            bufferArray = new ArrayBuffer(length),
+            view = new DataView(bufferArray),
+            channels = [],
+            sampleRate = buffer.sampleRate,
+            offset = 0,
+            pos = 0;
+
+        // write WAVE header
+        setUint32(0x46464952); // "RIFF"
+        setUint32(length - 8); // file length - 8
+        setUint32(0x45564157); // "WAVE"
+
+        setUint32(0x20746d66); // "fmt " chunk
+        setUint32(16); // length = 16
+        setUint16(1); // PCM (uncompressed)
+        setUint16(numOfChan);
+        setUint32(sampleRate);
+        setUint32(sampleRate * 2 * numOfChan); // avg. bytes/sec
+        setUint16(numOfChan * 2); // block-align
+        setUint16(16); // 16-bit (hardcoded in this demo)
+
+        setUint32(0x61746164); // "data" - chunk
+        setUint32(length - pos - 4); // chunk length
+
+        // write interleaved data
+        for (let i = 0; i < buffer.numberOfChannels; i++)
+            channels.push(buffer.getChannelData(i));
+
+        while (pos < length) {
+            for (let i = 0; i < numOfChan; i++) {
+                // interleave channels
+                const sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+                view.setInt16(pos, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true); // convert to 16-bit PCM
+                pos += 2;
+            }
+            offset++; // next source sample
+        }
+
+        // setUint32 and setUint16 functions
+        function setUint16(data) {
+            view.setUint16(pos, data, true);
+            pos += 2;
+        }
+
+        function setUint32(data) {
+            view.setUint32(pos, data, true);
+            pos += 4;
+        }
+
+        return bufferArray;
     };
 
     return (
