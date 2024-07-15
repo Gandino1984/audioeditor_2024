@@ -1,4 +1,9 @@
 /* AudioWaveform.css */
+.waveform-container {
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
 
 /* Style for buttons */
 .button-orange {
@@ -7,7 +12,18 @@
     border: none;
     padding: 8px 16px;
     cursor: pointer;
-    margin-right: 8px; /* Adjust margin as needed */
+    margin-right: 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.button-orange:hover {
+    background-color: darkorange;
+}
+
+.button-orange:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
 
 /* Style for range slider */
@@ -16,58 +32,65 @@
     appearance: none;
     width: 100%;
     height: 8px;
-    background: #ddd; /* Fallback color */
+    background: #ddd;
     outline: none;
     opacity: 0.7;
     transition: opacity 0.15s ease-in-out;
+    border-radius: 4px;
 }
 
 /* Customize the slider thumb */
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 24px; /* Increased thumb width */
-    height: 24px; /* Increased thumb height */
-    background: orange; /* Orange color for thumb */
+    width: 24px;
+    height: 24px;
+    background: orange;
     cursor: pointer;
+    border-radius: 50%;
 }
 
 .slider::-moz-range-thumb {
-    width: 24px; /* Increased thumb width */
-    height: 24px; /* Increased thumb height */
-    background: orange; /* Orange color for thumb */
+    width: 24px;
+    height: 24px;
+    background: orange;
     cursor: pointer;
+    border-radius: 50%;
 }
 
 /* Container for controls */
 .all-controls {
     display: flex;
-    justify-content: center; /* Center the buttons horizontally */
-    align-items: center; /* Center vertically within the container */
-    margin-top: 16px; /* Adjust margin as needed */
-}
-
-.left-container,
-.right-container {
-    display: flex;
-    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center buttons */
+    align-items: center;
+    margin-top: 16px;
 }
 
 .left-container {
-    margin-right: 16px; /* Space between buttons and zoom slider */
+    display: flex;
+    align-items: center;
 }
 
 .right-container {
     display: flex;
     align-items: center;
-     justify-content: center;
-    margin-left: 5px; /* Space between zoom slider and volume slider */
+    margin-left: auto; /* Push sliders to the right */
 }
 
-/* Space between zoom and volume slider */
 .volume-slide-container {
-   display: flex;
-   align-items: center;
-    justify-content: center;
+    display: flex;
+    align-items: center;
     margin-left: 16px;
+}
+
+.volume-slide-container span {
+    margin-right: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+.zoom-slider,
+.volume-slider {
+    width: 100px;
+    margin-left: 8px; /* Add margin between sliders */
 }
