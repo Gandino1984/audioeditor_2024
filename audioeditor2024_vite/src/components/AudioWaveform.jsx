@@ -16,14 +16,21 @@ const AudioWaveform = () => {
     const [volume, setVolume] = useState(1);
     const [zoom, setZoom] = useState(1);
     const [duration, setDuration] = useState(0);
+    const [isTrimming, setIsTrimming] = useState(false);
 
     useEffect(() => {
         console.log("AudioWaveform mounted. fileURL:", fileURL);
+        if (!fileURL) {
+            console.error("No file URL provided");
+            return;
+        }
+        let isMounted = true;
 
         const createWaveSurfer = async () => {
-            if (wavesurferRef.current && !wavesurferObjRef.current) {
+            if (wavesurferRef.current && !wavesurferObjRef.current && isMounted) {
                 try {
                     regionsPluginRef.current = RegionsPlugin.create();
+                    console.log("Regions plugin created:", regionsPluginRef.current);
 
                     wavesurferObjRef.current = WaveSurfer.create({
                         container: wavesurferRef.current,
@@ -43,17 +50,20 @@ const AudioWaveform = () => {
                     });
 
                     wavesurferObjRef.current.on('ready', () => {
-                        console.log('WaveSurfer is ready');
-                        setIsReady(true);
-                        setDuration(Math.floor(wavesurferObjRef.current.getDuration()));
-                        regionsPluginRef.current.enableDragSelection({});
+                        if (isMounted) {
+                            console.log('WaveSurfer is ready');
+                            setIsReady(true);
+                            setDuration(Math.floor(wavesurferObjRef.current.getDuration()));
+                            regionsPluginRef.current.enableDragSelection({});
+                        }
                     });
 
-                    wavesurferObjRef.current.on('play', () => setPlaying(true));
-                    wavesurferObjRef.current.on('pause', () => setPlaying(false));
-                    wavesurferObjRef.current.on('finish', () => setPlaying(false));
+                    wavesurferObjRef.current.on('play', () => isMounted && setPlaying(true));
+                    wavesurferObjRef.current.on('pause', () => isMounted && setPlaying(false));
+                    wavesurferObjRef.current.on('finish', () => isMounted && setPlaying(false));
 
-                    regionsPluginRef.current.on('region-updated', () => {
+                    regionsPluginRef.current.on('region-updated', (region) => {
+                        console.log("Region updated:", region);
                         const regions = regionsPluginRef.current.getRegions();
                         if (Object.keys(regions).length > 1) {
                             const keys = Object.keys(regions);
@@ -65,12 +75,16 @@ const AudioWaveform = () => {
                         try {
                             await wavesurferObjRef.current.load(fileURL);
                         } catch (error) {
-                            console.error('Error loading audio:', error);
-                            setIsReady(false);
+                            if (isMounted) {
+                                console.error('Error loading audio:', error);
+                                setIsReady(false);
+                            }
                         }
                     }
                 } catch (error) {
-                    console.error('Error creating WaveSurfer instance:', error);
+                    if (isMounted) {
+                        console.error('Error creating WaveSurfer instance:', error);
+                    }
                 }
             }
         };
@@ -78,6 +92,7 @@ const AudioWaveform = () => {
         createWaveSurfer();
 
         return () => {
+            isMounted = false;
             if (wavesurferObjRef.current) {
                 wavesurferObjRef.current.destroy();
                 wavesurferObjRef.current = null;
@@ -99,11 +114,13 @@ const AudioWaveform = () => {
 
     useEffect(() => {
         if (duration && regionsPluginRef.current) {
-            regionsPluginRef.current.addRegion({
+            console.log("Creating initial region");
+            const region = regionsPluginRef.current.addRegion({
                 start: Math.floor(duration / 2) - Math.floor(duration) / 5,
                 end: Math.floor(duration / 2),
                 color: 'hsla(265, 100%, 86%, 0.4)',
             });
+            console.log("Created region:", region);
         }
     }, [duration]);
 
@@ -131,77 +148,78 @@ const AudioWaveform = () => {
     };
 
     const handleTrim = () => {
+        console.log("Trim button clicked");
         if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
+            console.log("WaveSurfer and regions plugin are ready");
             const regions = regionsPluginRef.current.getRegions();
+            console.log("Regions:", regions);
             if (Object.keys(regions).length > 0) {
+                setIsTrimming(true);
                 const regionKey = Object.keys(regions)[0];
                 const region = regions[regionKey];
                 const start = region.start;
                 const end = region.end;
+                console.log(`Selected region: start=${start}, end=${end}`);
+
+                if (end <= start) {
+                    console.error('Invalid region selected. End time must be greater than start time.');
+                    setIsTrimming(false);
+                    return;
+                }
 
                 console.log(`Trimming audio from ${start} to ${end}`);
 
-                // Ensure backend and buffer are defined
-                const backend = wavesurferObjRef.current.backend;
-                if (!backend) {
-                    console.error('Backend is not defined');
-                    return;
-                }
-                if (!backend.buffer) {
-                    console.error('Backend buffer is not defined');
-                    return;
-                }
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                fetch(fileURL)
+                    .then(response => response.arrayBuffer())
+                    .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+                    .then(audioBuffer => {
+                        console.log("Audio buffer decoded:", audioBuffer);
+                        const newDuration = end - start;
+                        const newLength = Math.floor(newDuration * audioBuffer.sampleRate);
+                        const newBuffer = audioContext.createBuffer(
+                            audioBuffer.numberOfChannels,
+                            newLength,
+                            audioBuffer.sampleRate
+                        );
 
-                // Create a new audio buffer with the trimmed content
-                const originalBuffer = backend.buffer;
-                const sampleRate = originalBuffer.sampleRate;
-                const numberOfChannels = originalBuffer.numberOfChannels;
-                const newDuration = end - start;
-                const newLength = Math.floor(newDuration * sampleRate);
+                        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                            const oldData = audioBuffer.getChannelData(channel);
+                            const newData = newBuffer.getChannelData(channel);
+                            for (let i = 0; i < newLength; i++) {
+                                newData[i] = oldData[Math.floor(start * audioBuffer.sampleRate) + i];
+                            }
+                        }
 
-                const newBuffer = backend.ac.createBuffer(
-                    numberOfChannels,
-                    newLength,
-                    sampleRate
-                );
+                        console.log("New buffer created:", newBuffer);
+                        wavesurferObjRef.current.loadDecodedBuffer(newBuffer);
+                        setDuration(newDuration);
+                        setZoom(1);
+                        wavesurferObjRef.current.zoom(1);
+                        regionsPluginRef.current.clearRegions();
 
-                console.log(`Original buffer duration: ${originalBuffer.duration}`);
-                console.log(`New buffer duration: ${newDuration}`);
+                        regionsPluginRef.current.addRegion({
+                            start: 0,
+                            end: newDuration,
+                            color: 'hsla(265, 100%, 86%, 0.4)',
+                        });
 
-                // Copy the trimmed part of the audio to the new buffer
-                for (let channel = 0; channel < numberOfChannels; channel++) {
-                    const oldBufferData = originalBuffer.getChannelData(channel);
-                    const newBufferData = newBuffer.getChannelData(channel);
-                    for (let i = 0; i < newLength; i++) {
-                        newBufferData[i] = oldBufferData[Math.floor(start * sampleRate) + i];
-                    }
-                }
-
-                console.log('New buffer created and data copied.');
-
-                // Load the new buffer
-                wavesurferObjRef.current.loadDecodedBuffer(newBuffer);
-
-                // Reset zoom and remove regions
-                setZoom(1);
-                wavesurferObjRef.current.zoom(1);
-                regionsPluginRef.current.clearRegions();
-
-                // Update duration state
-                setDuration(newDuration);
-
-                // Force redraw of waveform
-                wavesurferObjRef.current.drawBuffer();
-
-                // Add a new region for the entire trimmed audio
-                regionsPluginRef.current.addRegion({
-                    start: 0,
-                    end: newDuration,
-                    color: 'hsla(265, 100%, 86%, 0.4)',
-                });
-
-                console.log('Trim completed and waveform updated.');
+                        console.log('Trim completed and waveform updated.');
+                        setIsTrimming(false);
+                    })
+                    .catch(error => {
+                        console.error('Error trimming audio:', error);
+                        setIsTrimming(false);
+                    });
+            } else {
+                console.log('No region selected for trimming.');
             }
+        } else {
+            console.log('WaveSurfer is not ready or regions plugin is not initialized.');
+            console.log('wavesurferObjRef.current:', wavesurferObjRef.current);
+            console.log('isReady:', isReady);
+            console.log('regionsPluginRef.current:', regionsPluginRef.current);
         }
     };
 
@@ -217,14 +235,13 @@ const AudioWaveform = () => {
                     <button className="button-orange" onClick={handleReload} disabled={!isReady}>
                         <ion-icon name="refresh" style={{ fontSize: '24px' }}></ion-icon>
                     </button>
-                    <button className="button-orange" onClick={handleTrim} disabled={!isReady}>
-                        <ion-icon name="cut" style={{ fontSize: '24px' }}></ion-icon>
+                    <button className="button-orange" onClick={handleTrim} disabled={!isReady || isTrimming}>
+                        {isTrimming ? 'Trimming...' : <ion-icon name="cut" style={{ fontSize: '24px' }}></ion-icon>}
                     </button>
                 </div>
                 <div className='right-container'>
                     <div className='volume-slide-container'>
-                        {/* <ion-icon name="remove"></ion-icon> */}
-                        zoom
+                        <span>zoom</span>
                         <input
                             type='range'
                             min='1'
@@ -234,15 +251,9 @@ const AudioWaveform = () => {
                             className='slider zoom-slider'
                             disabled={!isReady}
                         />
-                        {/* <ion-icon name="add"></ion-icon> */}
                     </div>
                     <div className='volume-slide-container'>
-                        volume
-                        {/* {volume > 0 ? (
-                            <ion-icon name="volume-high"></ion-icon>
-                        ) : (
-                            <ion-icon name="volume-low"></ion-icon>
-                        )} */}
+                        <span>volume</span>
                         <input
                             type='range'
                             min='0'
@@ -258,9 +269,6 @@ const AudioWaveform = () => {
             </div>
         </section>
     );
-    
-    
-    
 };
 
 export default AudioWaveform;
