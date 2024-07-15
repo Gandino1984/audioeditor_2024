@@ -61,23 +61,22 @@
 /* Container for controls */
 .all-controls {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-top: 16px;
 }
 
-.left-container,
-.right-container {
+.left-container {
     display: flex;
     align-items: center;
 }
 
-.right-container {
-    flex-grow: 1;
-    justify-content: flex-end;
+.center-container {
+    display: flex;
+    align-items: center;
+    margin-left: 16px;
 }
 
-/* Space between zoom and volume slider */
 .volume-slide-container {
     display: flex;
     align-items: center;
@@ -88,16 +87,9 @@
     margin-right: 8px;
     font-size: 14px;
     color: #333;
-    /* color: hsla(207, 100%, 50%, 0.5); */
 }
 
 .zoom-slider,
 .volume-slider {
     width: 100px;
-}
-
-/* Custom selection color for regions */
-.wavesurfer-region {
-    background-color: rgba(0, 255, 0, 0.7); /* Green with 40% opacity */
-    border-color: #00ff00; /* Solid green border */
 }
