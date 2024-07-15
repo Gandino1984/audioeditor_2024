@@ -4,12 +4,14 @@ import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
 import { FileContext } from '../contexts/fileContext';
 import './AudioWaveform.css';
+import EnvelopePlugin from 'wavesurfer.js/dist/plugins/envelope.esm.js';
 
 const AudioWaveform = () => {
     const wavesurferRef = useRef(null);
     const wavesurferObjRef = useRef(null);
     const timelineRef = useRef(null);
     const regionsPluginRef = useRef(null);
+    const envelopeRef = useRef(null); // Reference for Envelope plugin instance
     const { fileURL } = useContext(FileContext);
     const [isReady, setIsReady] = useState(false);
     const [playing, setPlaying] = useState(false);
@@ -46,8 +48,25 @@ const AudioWaveform = () => {
                                 container: timelineRef.current,
                             }),
                             regionsPluginRef.current,
-                        ]
+                            // Initialize Envelope plugin
+                            EnvelopePlugin.create({
+                                volume: 0.8,
+                                lineColor: 'rgba(255, 0, 0, 0.5)',
+                                lineWidth: 4,
+                                dragPointSize: 12, // Adjust as needed
+                                dragLine: true, // Adjust as needed
+                                dragPointFill: 'rgba(0, 255, 255, 0.8)',
+                                dragPointStroke: 'rgba(0, 0, 0, 0.5)',
+                                points: [
+                                    { time: 11.2, volume: 0.5 },
+                                    { time: 15.5, volume: 0.8 },
+                                ],
+                            }),
+                        ],
                     });
+
+                    // Store reference to Envelope plugin instance
+                    envelopeRef.current = wavesurferObjRef.current.envelope;
 
                     wavesurferObjRef.current.on('ready', () => {
                         if (isMounted) {
