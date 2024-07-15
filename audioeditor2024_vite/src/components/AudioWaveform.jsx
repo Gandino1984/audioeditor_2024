@@ -148,12 +148,18 @@ const AudioWaveform = () => {
         setZoom(parseInt(e.target.value));
     };
 
-    const handleTrim = () => {
-        console.log("Trim button clicked");
+    const handleOuterTrim = () => {
+        performTrim(false);
+    };
+
+    const handleInnerTrim = () => {
+        performTrim(true);
+    };
+
+    const performTrim = (isInnerTrim) => {
+        console.log(`${isInnerTrim ? "Inner" : "Outer"} Trim button clicked`);
         if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
-            console.log("WaveSurfer and regions plugin are ready");
             const regions = regionsPluginRef.current.getRegions();
-            console.log("Regions:", regions);
             if (regions.length === 1) {
                 setIsTrimming(true);
                 const region = regions[0];
@@ -167,61 +173,87 @@ const AudioWaveform = () => {
                     return;
                 }
 
-                console.log(`Trimming audio from ${start} to ${end}`);
-
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-                fetch(fileURL)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.arrayBuffer();
-                    })
-                    .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-                    .then(audioBuffer => {
-                        console.log("Audio buffer decoded:", audioBuffer);
-                        const newDuration = end - start;
-                        const newLength = Math.floor(newDuration * audioBuffer.sampleRate);
-                        const newBuffer = audioContext.createBuffer(
-                            audioBuffer.numberOfChannels,
-                            newLength,
-                            audioBuffer.sampleRate
-                        );
-
-                        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-                            const oldData = audioBuffer.getChannelData(channel);
-                            const newData = newBuffer.getChannelData(channel);
-                            for (let i = 0; i < newLength; i++) {
-                                newData[i] = oldData[Math.floor(start * audioBuffer.sampleRate) + i];
-                            }
-                        }
-
-                        console.log("New buffer created:", newBuffer);
-                        const wavBuffer = audioBufferToWav(newBuffer);
-                        const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
-                        const wavURL = URL.createObjectURL(wavBlob);
-
-                        wavesurferObjRef.current.load(wavURL);
-                        wavesurferObjRef.current.on('ready', () => {
-                            setDuration(newDuration);
-                            setZoom(1);
-                            wavesurferObjRef.current.zoom(1);
-                            regionsPluginRef.current.clearRegions();
-                            console.log('Trim completed and waveform updated.');
-                            setIsTrimming(false);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error trimming audio:', error);
-                        setIsTrimming(false);
-                    });
+                console.log(`${isInnerTrim ? "Inner" : "Outer"} trimming audio from ${start} to ${end}`);
+                trimAudio(start, end, isInnerTrim);
             } else {
                 console.log('No region selected for trimming.');
             }
         } else {
             console.log('WaveSurfer is not ready or regions plugin is not initialized.');
         }
+    };
+
+    const trimAudio = (start, end, isInnerTrim) => {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+        fetch(fileURL)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.arrayBuffer();
+            })
+            .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+            .then(audioBuffer => {
+                console.log("Audio buffer decoded:", audioBuffer);
+                let newBuffer;
+    
+                if (isInnerTrim) {
+                    const firstPartLength = Math.floor(start * audioBuffer.sampleRate);
+                    const secondPartStart = Math.min(Math.floor(end * audioBuffer.sampleRate), audioBuffer.length);
+                    const secondPartLength = audioBuffer.length - secondPartStart;
+                    const newLength = firstPartLength + secondPartLength;
+    
+                    newBuffer = audioContext.createBuffer(
+                        audioBuffer.numberOfChannels,
+                        newLength,
+                        audioBuffer.sampleRate
+                    );
+    
+                    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                        const oldData = audioBuffer.getChannelData(channel);
+                        const newData = newBuffer.getChannelData(channel);
+    
+                        // Copy first part
+                        newData.set(oldData.subarray(0, firstPartLength), 0);
+                        // Copy second part
+                        newData.set(oldData.subarray(secondPartStart), firstPartLength);
+                    }
+                } else {
+                    // Outer trim logic (unchanged)
+                    const newLength = Math.floor((end - start) * audioBuffer.sampleRate);
+                    newBuffer = audioContext.createBuffer(
+                        audioBuffer.numberOfChannels,
+                        newLength,
+                        audioBuffer.sampleRate
+                    );
+    
+                    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                        const oldData = audioBuffer.getChannelData(channel);
+                        const newData = newBuffer.getChannelData(channel);
+                        newData.set(oldData.subarray(Math.floor(start * audioBuffer.sampleRate), Math.floor(end * audioBuffer.sampleRate)));
+                    }
+                }
+    
+                console.log("New buffer created:", newBuffer);
+                const wavBuffer = audioBufferToWav(newBuffer);
+                const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+                const wavURL = URL.createObjectURL(wavBlob);
+    
+                wavesurferObjRef.current.load(wavURL);
+                wavesurferObjRef.current.on('ready', () => {
+                    setDuration(newBuffer.duration);
+                    setZoom(1);
+                    wavesurferObjRef.current.zoom(1);
+                    regionsPluginRef.current.clearRegions();
+                    console.log('Trim completed and waveform updated.');
+                    setIsTrimming(false);
+                });
+            })
+            .catch(error => {
+                console.error('Error trimming audio:', error);
+                setIsTrimming(false);
+            });
     };
 
     const audioBufferToWav = (buffer) => {
@@ -292,8 +324,11 @@ const AudioWaveform = () => {
                     <button className="button-orange" onClick={handleReload} disabled={!isReady}>
                         <ion-icon name="refresh" style={{ fontSize: '24px' }}></ion-icon>
                     </button>
-                    <button className="button-orange" onClick={handleTrim} disabled={!isReady || isTrimming}>
+                    <button className="button-orange" onClick={handleOuterTrim} disabled={!isReady || isTrimming}>
                         {isTrimming ? 'Trimming...' : 'OUTER TRIM' }
+                    </button>
+                    <button className="button-orange" onClick={handleInnerTrim} disabled={!isReady || isTrimming}>
+                        {isTrimming ? 'Trimming...' : 'INNER TRIM' }
                     </button>
                 </div>
                 <div className='right-container'>
