@@ -76,12 +76,12 @@ const AudioWaveform = () => {
                         if (isMounted) {
                             console.log('WaveSurfer is ready');
                             setIsReady(true);
+                            console.log("isReady set to true");
                             const duration = Math.floor(wavesurferObjRef.current.getDuration());
                             setDuration(duration);
                             regionsPluginRef.current.clearRegions();
                         }
                     });
-
                     wavesurferObjRef.current.on('play', () => isMounted && setPlaying(true));
                     wavesurferObjRef.current.on('pause', () => isMounted && setPlaying(false));
                     wavesurferObjRef.current.on('finish', () => isMounted && setPlaying(false));
@@ -192,6 +192,40 @@ const AudioWaveform = () => {
 
     const handleInnerTrim = () => {
         performTrim(true);
+    };
+
+    const handleForward = () => {
+        if (wavesurferObjRef.current && isReady) {
+            const currentTime = wavesurferObjRef.current.getCurrentTime();
+            const newTime = Math.min(currentTime + 5, wavesurferObjRef.current.getDuration());
+            console.log(`Moving forward from ${currentTime} to ${newTime}`);
+            wavesurferObjRef.current.setCurrentTime(newTime);
+        } else {
+            console.error("Wavesurfer not ready for forward seek");
+        }
+    };
+    
+    const handleBackward = () => {
+        if (wavesurferObjRef.current && isReady) {
+            const currentTime = wavesurferObjRef.current.getCurrentTime();
+            const newTime = Math.max(0, currentTime - 5);
+            console.log(`Moving backward from ${currentTime} to ${newTime}`);
+            wavesurferObjRef.current.setCurrentTime(newTime);
+        } else {
+            console.error("Wavesurfer not ready for backward seek");
+        }
+    };
+
+    
+    const handleDownload = () => {
+        if (currentAudioURL) {
+            const link = document.createElement('a');
+            link.href = currentAudioURL;
+            link.download = 'edited_audio.wav';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     };
 
     const performTrim = (isInnerTrim) => {
@@ -348,9 +382,16 @@ const AudioWaveform = () => {
                 <div ref={timelineRef} className="timeline" />
             </div>
             <div className="controls">
+                <button onClick={handleBackward} disabled={!isReady} className="control-button">
+                    <ion-icon name="play-skip-back"></ion-icon>
+                </button>
                 <button onClick={handlePlayPause} disabled={!isReady} className="control-button">
                     {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
                 </button>
+                <button onClick={handleForward} disabled={!isReady} className="control-button">
+                    <ion-icon name="play-skip-forward"></ion-icon>
+                </button>
+         
                 <button onClick={handleReload} disabled={!isReady} className="control-button">
                     <ion-icon name="repeat"></ion-icon>
                 </button>
@@ -377,12 +418,14 @@ const AudioWaveform = () => {
                         className="zoom-slider"
                     />
                 </div>
-             
                 <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
                     {isTrimming ? 'Trimming...' : <ion-icon name="cut"></ion-icon>}
                 </button>
                 <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
                     {isTrimming ? 'Trimming...' : 'OUTER TRIM'}
+                </button>
+                <button onClick={handleDownload} disabled={!isReady} className="control-button">
+                    <ion-icon name="download"></ion-icon>
                 </button>
             </div>
         </div>
