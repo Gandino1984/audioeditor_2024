@@ -382,19 +382,25 @@ const AudioWaveform = () => {
                 <div ref={timelineRef} className="timeline" />
             </div>
             <div className="controls">
+                <button onClick={handleReload} disabled={!isReady} className="control-button">
+                    <ion-icon name="repeat"></ion-icon>
+                </button>
                 <button onClick={handleBackward} disabled={!isReady} className="control-button">
-                    <ion-icon name="play-skip-back"></ion-icon>
+                    <ion-icon name="caret-back"></ion-icon>
                 </button>
                 <button onClick={handlePlayPause} disabled={!isReady} className="control-button">
                     {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
                 </button>
                 <button onClick={handleForward} disabled={!isReady} className="control-button">
-                    <ion-icon name="play-skip-forward"></ion-icon>
+                    <ion-icon name="caret-forward"></ion-icon>
                 </button>
-         
-                <button onClick={handleReload} disabled={!isReady} className="control-button">
-                    <ion-icon name="repeat"></ion-icon>
+                <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
+                    {isTrimming ? 'Trimming...' : <ion-icon name="cut"></ion-icon>}
                 </button>
+                <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
+                    {isTrimming ? 'Trimming...' : 'OUTER TRIM'}
+                </button>
+               
                 <div className="volume-control">
                     <ion-icon name="volume-medium"></ion-icon>
                     <input
@@ -418,12 +424,6 @@ const AudioWaveform = () => {
                         className="zoom-slider"
                     />
                 </div>
-                <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
-                    {isTrimming ? 'Trimming...' : <ion-icon name="cut"></ion-icon>}
-                </button>
-                <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
-                    {isTrimming ? 'Trimming...' : 'OUTER TRIM'}
-                </button>
                 <button onClick={handleDownload} disabled={!isReady} className="control-button">
                     <ion-icon name="download"></ion-icon>
                 </button>
