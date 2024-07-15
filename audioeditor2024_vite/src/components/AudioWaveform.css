@@ -14,11 +14,11 @@
     cursor: pointer;
     margin-right: 8px;
     border-radius: 4px;
-    transition: background-color 0.3s ease;
+    transition: all 200ms ease;
 }
 
 .button-orange:hover {
-    background-color: darkorange;
+    background-color: #396BAA;
 }
 
 .button-orange:disabled {

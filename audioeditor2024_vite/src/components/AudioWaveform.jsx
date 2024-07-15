@@ -343,16 +343,18 @@ const AudioWaveform = () => {
                     <button className="button-orange" onClick={handleReload} disabled={!isReady}>
                         <ion-icon name="refresh" style={{ fontSize: '24px' }}></ion-icon>
                     </button>
+                    
+                    <button className="button-orange" onClick={handleInnerTrim} disabled={!isReady || isTrimming}>
+                        {isTrimming ? 'Trimming...' :  <ion-icon name="cut" style={{ fontSize: '24px' }}></ion-icon>}
+                    </button>
+
                     <button className="button-orange" onClick={handleOuterTrim} disabled={!isReady || isTrimming}>
                         {isTrimming ? 'Trimming...' : 'OUTER TRIM' }
-                    </button>
-                    <button className="button-orange" onClick={handleInnerTrim} disabled={!isReady || isTrimming}>
-                        {isTrimming ? 'Trimming...' : 'INNER TRIM' }
                     </button>
                 </div>
                 <div className='right-container'>
                     <div className='volume-slide-container'>
-                        <span>zoom</span>
+                        <span><ion-icon name="search"></ion-icon></span>
                         <input
                             type='range'
                             min='1'
@@ -364,7 +366,7 @@ const AudioWaveform = () => {
                         />
                     </div>
                     <div className='volume-slide-container'>
-                        <span>volume</span>
+                        <span><ion-icon name="volume-high"></ion-icon></span>
                         <input
                             type='range'
                             min='0'
