@@ -11,7 +11,7 @@ const AudioWaveform = () => {
     const wavesurferObjRef = useRef(null);
     const timelineRef = useRef(null);
     const regionsPluginRef = useRef(null);
-    const envelopeRef = useRef(null); // Reference for Envelope plugin instance
+    const envelopeRef = useRef(null);
     const { fileURL } = useContext(FileContext);
     const [isReady, setIsReady] = useState(false);
     const [playing, setPlaying] = useState(false);
@@ -19,6 +19,7 @@ const AudioWaveform = () => {
     const [zoom, setZoom] = useState(1);
     const [duration, setDuration] = useState(0);
     const [isTrimming, setIsTrimming] = useState(false);
+    const [isTrimmed, setIsTrimmed] = useState(false);
 
     useEffect(() => {
         console.log("AudioWaveform mounted. fileURL:", fileURL);
@@ -48,13 +49,12 @@ const AudioWaveform = () => {
                                 container: timelineRef.current,
                             }),
                             regionsPluginRef.current,
-                            // Initialize Envelope plugin
                             EnvelopePlugin.create({
                                 volume: 0.8,
                                 lineColor: 'rgba(255, 0, 0, 0.5)',
                                 lineWidth: 4,
-                                dragPointSize: 12, // Adjust as needed
-                                dragLine: true, // Adjust as needed
+                                dragPointSize: 12,
+                                dragLine: true,
                                 dragPointFill: 'rgba(0, 255, 255, 0.8)',
                                 dragPointStroke: 'rgba(0, 0, 0, 0.5)',
                                 points: [
@@ -65,7 +65,6 @@ const AudioWaveform = () => {
                         ],
                     });
 
-                    // Store reference to Envelope plugin instance
                     envelopeRef.current = wavesurferObjRef.current.envelope;
 
                     wavesurferObjRef.current.on('ready', () => {
@@ -88,6 +87,9 @@ const AudioWaveform = () => {
                         if (regions.length > 1) {
                             regions.slice(0, -1).forEach(r => r.remove());
                         }
+                        if (region.end > wavesurferObjRef.current.getDuration()) {
+                            region.onResize(wavesurferObjRef.current.getDuration());
+                        }
                     });
 
                     regionsPluginRef.current.on('region-created', (region) => {
@@ -95,6 +97,9 @@ const AudioWaveform = () => {
                         const regions = regionsPluginRef.current.getRegions();
                         if (regions.length > 1) {
                             regions.slice(0, -1).forEach(r => r.remove());
+                        }
+                        if (region.end > wavesurferObjRef.current.getDuration()) {
+                            region.onResize(wavesurferObjRef.current.getDuration());
                         }
                     });
 
@@ -106,6 +111,7 @@ const AudioWaveform = () => {
                     if (fileURL) {
                         try {
                             await wavesurferObjRef.current.load(fileURL);
+                            setIsTrimmed(false);
                         } catch (error) {
                             if (isMounted) {
                                 console.error('Error loading audio:', error);
@@ -182,8 +188,15 @@ const AudioWaveform = () => {
             if (regions.length === 1) {
                 setIsTrimming(true);
                 const region = regions[0];
-                const start = region.start;
-                const end = region.end;
+                let start = region.start;
+                let end = region.end;
+                const currentDuration = wavesurferObjRef.current.getDuration();
+                
+                if (isTrimmed) {
+                    start = (start / currentDuration) * duration;
+                    end = (end / currentDuration) * duration;
+                }
+                
                 console.log(`Selected region: start=${start}, end=${end}`);
 
                 if (end <= start) {
@@ -204,56 +217,59 @@ const AudioWaveform = () => {
 
     const trimAudio = (start, end, isInnerTrim) => {
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    
+        
         fetch(fileURL)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.arrayBuffer();
-            })
+            .then(response => response.arrayBuffer())
             .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
             .then(audioBuffer => {
-                console.log("Audio buffer decoded:", audioBuffer);
                 let newBuffer;
-    
+                const bufferDuration = audioBuffer.duration;
+                const sampleRate = audioBuffer.sampleRate;
+                
+                // Ensure start and end are within bounds
+                start = Math.max(0, Math.min(start, bufferDuration));
+                end = Math.max(start, Math.min(end, bufferDuration));
+                
                 if (isInnerTrim) {
-                    const firstPartLength = Math.floor(start * audioBuffer.sampleRate);
-                    const secondPartStart = Math.min(Math.floor(end * audioBuffer.sampleRate), audioBuffer.length);
-                    const secondPartLength = audioBuffer.length - secondPartStart;
-                    const newLength = firstPartLength + secondPartLength;
-    
+                    const startSamples = Math.floor(start * sampleRate);
+                    const endSamples = Math.floor(end * sampleRate);
+                    const newLength = startSamples + (audioBuffer.length - endSamples);
+                    
                     newBuffer = audioContext.createBuffer(
                         audioBuffer.numberOfChannels,
                         newLength,
-                        audioBuffer.sampleRate
+                        sampleRate
                     );
-    
+                    
                     for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
                         const oldData = audioBuffer.getChannelData(channel);
                         const newData = newBuffer.getChannelData(channel);
-    
-                        // Copy first part
-                        newData.set(oldData.subarray(0, firstPartLength), 0);
-                        // Copy second part
-                        newData.set(oldData.subarray(secondPartStart), firstPartLength);
+                        
+                        // Copy the first part (before the trim)
+                        newData.set(oldData.subarray(0, startSamples), 0);
+                        
+                        // Copy the second part (after the trim)
+                        const secondPartStart = Math.min(endSamples, oldData.length);
+                        newData.set(oldData.subarray(secondPartStart), startSamples);
                     }
                 } else {
-                    // Outer trim logic (unchanged)
-                    const newLength = Math.floor((end - start) * audioBuffer.sampleRate);
+                    const startSamples = Math.floor(start * sampleRate);
+                    const endSamples = Math.floor(end * sampleRate);
+                    const newLength = endSamples - startSamples;
+                    
                     newBuffer = audioContext.createBuffer(
                         audioBuffer.numberOfChannels,
                         newLength,
-                        audioBuffer.sampleRate
+                        sampleRate
                     );
-    
+                    
                     for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
                         const oldData = audioBuffer.getChannelData(channel);
                         const newData = newBuffer.getChannelData(channel);
-                        newData.set(oldData.subarray(Math.floor(start * audioBuffer.sampleRate), Math.floor(end * audioBuffer.sampleRate)));
+                        newData.set(oldData.subarray(startSamples, endSamples), 0);
                     }
                 }
-    
+                
                 console.log("New buffer created:", newBuffer);
                 const wavBuffer = audioBufferToWav(newBuffer);
                 const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
@@ -267,6 +283,7 @@ const AudioWaveform = () => {
                     regionsPluginRef.current.clearRegions();
                     console.log('Trim completed and waveform updated.');
                     setIsTrimming(false);
+                    setIsTrimmed(true);
                 });
             })
             .catch(error => {
@@ -274,6 +291,7 @@ const AudioWaveform = () => {
                 setIsTrimming(false);
             });
     };
+
 
     const audioBufferToWav = (buffer) => {
         let numOfChan = buffer.numberOfChannels,
