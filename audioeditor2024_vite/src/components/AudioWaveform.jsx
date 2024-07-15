@@ -20,11 +20,16 @@ const AudioWaveform = () => {
     const [duration, setDuration] = useState(0);
     const [isTrimming, setIsTrimming] = useState(false);
     const [isTrimmed, setIsTrimmed] = useState(false);
+    const [currentAudioURL, setCurrentAudioURL] = useState(null);
 
     useEffect(() => {
-        console.log("AudioWaveform mounted. fileURL:", fileURL);
-        if (!fileURL) {
-            console.error("No file URL provided");
+        setCurrentAudioURL(fileURL);
+    }, [fileURL]);
+
+    useEffect(() => {
+        console.log("AudioWaveform mounted. currentAudioURL:", currentAudioURL);
+        if (!currentAudioURL) {
+            console.error("No audio URL provided");
             return;
         }
         let isMounted = true;
@@ -108,9 +113,9 @@ const AudioWaveform = () => {
                         maxRegions: 1,
                     });
 
-                    if (fileURL) {
+                    if (currentAudioURL) {
                         try {
-                            await wavesurferObjRef.current.load(fileURL);
+                            await wavesurferObjRef.current.load(currentAudioURL);
                             setIsTrimmed(false);
                         } catch (error) {
                             if (isMounted) {
@@ -136,7 +141,7 @@ const AudioWaveform = () => {
                 wavesurferObjRef.current = null;
             }
         };
-    }, [fileURL]);
+    }, [currentAudioURL]);
 
     useEffect(() => {
         if (wavesurferObjRef.current && isReady) {
@@ -149,6 +154,14 @@ const AudioWaveform = () => {
             wavesurferObjRef.current.zoom(zoom);
         }
     }, [zoom, isReady]);
+
+    useEffect(() => {
+        return () => {
+            if (currentAudioURL && currentAudioURL !== fileURL) {
+                URL.revokeObjectURL(currentAudioURL);
+            }
+        };
+    }, [currentAudioURL, fileURL]);
 
     const handlePlayPause = () => {
         if (wavesurferObjRef.current && isReady) {
@@ -218,7 +231,7 @@ const AudioWaveform = () => {
     const trimAudio = (start, end, isInnerTrim) => {
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
-        fetch(fileURL)
+        fetch(currentAudioURL)
             .then(response => response.arrayBuffer())
             .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
             .then(audioBuffer => {
@@ -274,6 +287,7 @@ const AudioWaveform = () => {
                 const trimmedAudioURL = URL.createObjectURL(trimmedAudioBlob);
                 console.log("Trimmed audio URL:", trimmedAudioURL);
                 wavesurferObjRef.current.load(trimmedAudioURL);
+                setCurrentAudioURL(trimmedAudioURL);
                 setIsTrimmed(true);
                 setIsTrimming(false);
             })
@@ -335,13 +349,13 @@ const AudioWaveform = () => {
             </div>
             <div className="controls">
                 <button onClick={handlePlayPause} disabled={!isReady} className="control-button">
-                    {playing ? 'PAUSE' : 'PLAY'}
+                    {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
                 </button>
                 <button onClick={handleReload} disabled={!isReady} className="control-button">
-                    REPLAY
+                    <ion-icon name="repeat"></ion-icon>
                 </button>
                 <div className="volume-control">
-                    <label>Volume:</label>
+                    <ion-icon name="volume-medium"></ion-icon>
                     <input
                         type="range"
                         min="0"
@@ -353,7 +367,7 @@ const AudioWaveform = () => {
                     />
                 </div>
                 <div className="zoom-control">
-                    <label>Zoom:</label>
+                    <ion-icon name="search"></ion-icon>
                     <input
                         type="range"
                         min="1"
@@ -363,11 +377,12 @@ const AudioWaveform = () => {
                         className="zoom-slider"
                     />
                 </div>
+             
+                <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
+                    {isTrimming ? 'Trimming...' : <ion-icon name="cut"></ion-icon>}
+                </button>
                 <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
                     {isTrimming ? 'Trimming...' : 'OUTER TRIM'}
-                </button>
-                <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
-                    {isTrimming ? 'Trimming...' : 'INNER TRIM'}
                 </button>
             </div>
         </div>
