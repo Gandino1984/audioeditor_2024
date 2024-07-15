@@ -21,10 +21,18 @@ const AudioWaveform = () => {
     const [isTrimming, setIsTrimming] = useState(false);
     const [isTrimmed, setIsTrimmed] = useState(false);
     const [currentAudioURL, setCurrentAudioURL] = useState(null);
+    const [fileName, setFileName] = useState('');
 
     useEffect(() => {
         setCurrentAudioURL(fileURL);
     }, [fileURL]);
+
+    useEffect(() => {
+        if (currentAudioURL) {
+            const name = currentAudioURL.split('/').pop() || 'Audio File';
+            setFileName(name);
+        }
+    }, [currentAudioURL]);
 
     useEffect(() => {
         console.log("AudioWaveform mounted. currentAudioURL:", currentAudioURL);
@@ -197,7 +205,7 @@ const AudioWaveform = () => {
     const handleForward = () => {
         if (wavesurferObjRef.current && isReady) {
             const currentTime = wavesurferObjRef.current.getCurrentTime();
-            const newTime = Math.min(currentTime + 5, wavesurferObjRef.current.getDuration());
+            const newTime = Math.min(currentTime + 10, wavesurferObjRef.current.getDuration());
             console.log(`Moving forward from ${currentTime} to ${newTime}`);
             wavesurferObjRef.current.setCurrentTime(newTime);
         } else {
@@ -208,7 +216,7 @@ const AudioWaveform = () => {
     const handleBackward = () => {
         if (wavesurferObjRef.current && isReady) {
             const currentTime = wavesurferObjRef.current.getCurrentTime();
-            const newTime = Math.max(0, currentTime - 5);
+            const newTime = Math.max(0, currentTime - 10);
             console.log(`Moving backward from ${currentTime} to ${newTime}`);
             wavesurferObjRef.current.setCurrentTime(newTime);
         } else {
@@ -377,6 +385,7 @@ const AudioWaveform = () => {
 
     return (
         <div className="audio-waveform">
+            <h2 className="audio-file-name">{fileName}</h2>
             <div className="waveform-container">
                 <div ref={wavesurferRef} className="waveform" />
                 <div ref={timelineRef} className="timeline" />
@@ -386,13 +395,13 @@ const AudioWaveform = () => {
                     <ion-icon name="repeat"></ion-icon>
                 </button>
                 <button onClick={handleBackward} disabled={!isReady} className="control-button">
-                    <ion-icon name="caret-back"></ion-icon>
+                    <ion-icon name="play-back"></ion-icon> 10s
                 </button>
                 <button onClick={handlePlayPause} disabled={!isReady} className="control-button">
                     {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
                 </button>
                 <button onClick={handleForward} disabled={!isReady} className="control-button">
-                    <ion-icon name="caret-forward"></ion-icon>
+                    <ion-icon name="play-forward"></ion-icon> 10s
                 </button>
                 <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
                     {isTrimming ? 'Trimming...' : <ion-icon name="cut"></ion-icon>}
