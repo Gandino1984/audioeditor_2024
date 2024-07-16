@@ -8,7 +8,7 @@ import EnvelopePlugin from 'wavesurfer.js/dist/plugins/envelope.esm.js';
 
 const AudioWaveform = () => {
 
-
+    const [infoText, setInfoText] = useState('');
     const [displayFileName, setDisplayFileName] = useState('');
     const wavesurferRef = useRef(null);
     const wavesurferObjRef = useRef(null);
@@ -24,6 +24,12 @@ const AudioWaveform = () => {
     const [isTrimming, setIsTrimming] = useState(false);
     const [isTrimmed, setIsTrimmed] = useState(false);
     const [currentAudioURL, setCurrentAudioURL] = useState(null);
+
+    const updateInfoText = (text) => {
+        setInfoText(text);
+        // Optionally, clear the text after a few seconds
+        setTimeout(() => setInfoText(''), 4000);
+    };
 
     useEffect(() => {
         console.log("FileContext values:", { fileName, fileURL });
@@ -78,8 +84,13 @@ const AudioWaveform = () => {
                                     { time: 11.2, volume: 0.5 },
                                     { time: 15.5, volume: 0.8 },
                                 ],
+                                
                             }),
                         ],
+                    });
+
+                    wavesurferObjRef.current.on('envelope-point-added', () => {
+                        updateInfoText('New volume control point added');
                     });
 
                     envelopeRef.current = wavesurferObjRef.current.envelope;
@@ -158,12 +169,14 @@ const AudioWaveform = () => {
     useEffect(() => {
         if (wavesurferObjRef.current && isReady) {
             wavesurferObjRef.current.setVolume(volume);
+            updateInfoText(`Volume set to ${volume}`);
         }
     }, [volume, isReady]);
 
     useEffect(() => {
         if (wavesurferObjRef.current && isReady) {
             wavesurferObjRef.current.zoom(zoom);
+            updateInfoText(`Zoom set to ${zoom}`);
         }
     }, [zoom, isReady]);
 
@@ -179,6 +192,7 @@ const AudioWaveform = () => {
         if (wavesurferObjRef.current && isReady) {
             wavesurferObjRef.current.playPause();
             setPlaying(!playing);
+            updateInfoText(playing ? 'Audio paused...' : 'Playing audio...');
         }
     };
 
@@ -187,6 +201,7 @@ const AudioWaveform = () => {
             wavesurferObjRef.current.stop();
             wavesurferObjRef.current.play();
             setPlaying(true);
+            updateInfoText('Audio reloaded and playing from start...');
         }
     };
 
@@ -212,8 +227,10 @@ const AudioWaveform = () => {
             const newTime = Math.min(currentTime + 10, wavesurferObjRef.current.getDuration());
             console.log(`Moving forward from ${currentTime} to ${newTime}`);
             wavesurferObjRef.current.seekTo(newTime / wavesurferObjRef.current.getDuration());
+            updateInfoText('Play head moved forward 10 seconds');
         } else {
             console.error("Wavesurfer not ready for forward seek");
+            updateInfoText('The audio is not ready for forward seek...');
         }
     };
     
@@ -223,8 +240,10 @@ const AudioWaveform = () => {
             const newTime = Math.max(0, currentTime - 10);
             console.log(`Moving backward from ${currentTime} to ${newTime}`);
             wavesurferObjRef.current.seekTo(newTime / wavesurferObjRef.current.getDuration());
+            updateInfoText('Play head moved backward 10 seconds');
         } else {
             console.error("Wavesurfer not ready for backward seek");
+            updateInfoText('The audio is not ready for backward seek...');
         }
     };
 
@@ -237,11 +256,12 @@ const AudioWaveform = () => {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            updateInfoText('Downloading edited audio...');
         }
     };
 
     const performTrim = (isInnerTrim) => {
-        console.log(`${isInnerTrim ? "Inner" : "Outer"} Trim button clicked`);
+        updateInfoText(`${isInnerTrim ? "Inner" : "Outer"} Trim button clicked`);
         if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
             const regions = regionsPluginRef.current.getRegions();
             if (regions.length === 1) {
@@ -256,21 +276,23 @@ const AudioWaveform = () => {
                     end = (end / currentDuration) * duration;
                 }
                 
-                console.log(`Selected region: start=${start}, end=${end}`);
+                updateInfoText(`Selected region: start=${start}, end=${end}`);
 
                 if (end <= start) {
-                    console.error('Invalid region selected. End time must be greater than start time.');
+                    updateInfoText('Invalid region selected. End time must be greater than start time.');
                     setIsTrimming(false);
                     return;
                 }
 
-                console.log(`${isInnerTrim ? "Inner" : "Outer"} trimming audio from ${start} to ${end}`);
+                updateInfoText(`${isInnerTrim ? "Inner" : "Outer"} trimming audio from ${start.toFixed(1)} to ${end.toFixed(1)}`);
                 trimAudio(start, end, isInnerTrim);
             } else {
                 console.log('No region selected for trimming.');
+                updateInfoText('No region selected for trimming...');
             }
         } else {
             console.log('WaveSurfer is not ready or regions plugin is not initialized.');
+            updateInfoText('WaveSurfer is not ready or regions plugin is not initialized...');
         }
     };
 
@@ -332,6 +354,7 @@ const AudioWaveform = () => {
                 const trimmedAudioBlob = audioBufferToWavBlob(newBuffer);
                 const trimmedAudioURL = URL.createObjectURL(trimmedAudioBlob);
                 console.log("Trimmed audio URL:", trimmedAudioURL);
+                updateInfoText('Audio trimmed successfully!');
                 wavesurferObjRef.current.load(trimmedAudioURL);
                 setCurrentAudioURL(trimmedAudioURL);
                 setIsTrimmed(true);
@@ -339,6 +362,7 @@ const AudioWaveform = () => {
             })
             .catch(error => {
                 console.error("Error trimming audio:", error);
+                updateInfoText("Error trimming audio:", error);
                 setIsTrimming(false);
             });
     };
@@ -394,7 +418,7 @@ const AudioWaveform = () => {
                 <div ref={wavesurferRef} className="waveform" />
                 <div ref={timelineRef} className="timeline" />
             </div>
-
+            <div className="info-text">{infoText}</div>
             <div className='waveform-controls'>
                 <div className="controls">
                     <button onClick={handlePlayPause} id="playPauseBtn" disabled={!isReady} className="control-button">
