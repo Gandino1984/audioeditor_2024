@@ -7,33 +7,35 @@ import './AudioWaveform.css';
 import EnvelopePlugin from 'wavesurfer.js/dist/plugins/envelope.esm.js';
 
 const AudioWaveform = () => {
+
+
+    const [displayFileName, setDisplayFileName] = useState('');
     const wavesurferRef = useRef(null);
     const wavesurferObjRef = useRef(null);
     const timelineRef = useRef(null);
     const regionsPluginRef = useRef(null);
     const envelopeRef = useRef(null);
-    const { fileURL } = useContext(FileContext);
+    const { fileURL, fileName} = useContext(FileContext);
     const [isReady, setIsReady] = useState(false);
     const [playing, setPlaying] = useState(false);
-    const [volume, setVolume] = useState(1);
+    const [volume, setVolume] = useState(0.5);
     const [zoom, setZoom] = useState(1);
     const [duration, setDuration] = useState(0);
     const [isTrimming, setIsTrimming] = useState(false);
     const [isTrimmed, setIsTrimmed] = useState(false);
     const [currentAudioURL, setCurrentAudioURL] = useState(null);
-    const [fileName, setFileName] = useState('');
+
+    useEffect(() => {
+        console.log("FileContext values:", { fileName, fileURL });
+        setCurrentAudioURL(fileURL);
+        setDisplayFileName(fileName || 'No file selected');
+    }, [fileName, fileURL]);
 
     useEffect(() => {
         setCurrentAudioURL(fileURL);
     }, [fileURL]);
 
-    useEffect(() => {
-        if (currentAudioURL) {
-            const name = currentAudioURL.split('/').pop() || 'Audio File';
-            setFileName(name);
-        }
-    }, [currentAudioURL]);
-
+   
     useEffect(() => {
         console.log("AudioWaveform mounted. currentAudioURL:", currentAudioURL);
         if (!currentAudioURL) {
@@ -54,6 +56,8 @@ const AudioWaveform = () => {
                         autoCenter: true,
                         cursorColor: 'orange',
                         loopSelection: true,
+                         cursorWidth: 1.5,
+                         barWidth: 2,
                         waveColor: '#7b817f',
                         progressColor: '#9c501d',
                         responsive: true,
@@ -64,12 +68,12 @@ const AudioWaveform = () => {
                             regionsPluginRef.current,
                             EnvelopePlugin.create({
                                 volume: 0.8,
-                                lineColor: 'rgba(255, 0, 0, 0.5)',
-                                lineWidth: 4,
-                                dragPointSize: 12,
+                                lineColor: 'white',
+                                lineWidth: 1.5,
+                                dragPointSize: 9,
                                 dragLine: true,
-                                dragPointFill: 'rgba(0, 255, 255, 0.8)',
-                                dragPointStroke: 'rgba(0, 0, 0, 0.5)',
+                                dragPointFill: 'blue',
+                                dragPointStroke: 'white',
                                 points: [
                                     { time: 11.2, volume: 0.5 },
                                     { time: 15.5, volume: 0.8 },
@@ -207,7 +211,7 @@ const AudioWaveform = () => {
             const currentTime = wavesurferObjRef.current.getCurrentTime();
             const newTime = Math.min(currentTime + 10, wavesurferObjRef.current.getDuration());
             console.log(`Moving forward from ${currentTime} to ${newTime}`);
-            wavesurferObjRef.current.setCurrentTime(newTime);
+            wavesurferObjRef.current.seekTo(newTime / wavesurferObjRef.current.getDuration());
         } else {
             console.error("Wavesurfer not ready for forward seek");
         }
@@ -218,7 +222,7 @@ const AudioWaveform = () => {
             const currentTime = wavesurferObjRef.current.getCurrentTime();
             const newTime = Math.max(0, currentTime - 10);
             console.log(`Moving backward from ${currentTime} to ${newTime}`);
-            wavesurferObjRef.current.setCurrentTime(newTime);
+            wavesurferObjRef.current.seekTo(newTime / wavesurferObjRef.current.getDuration());
         } else {
             console.error("Wavesurfer not ready for backward seek");
         }
@@ -385,57 +389,63 @@ const AudioWaveform = () => {
 
     return (
         <div className="audio-waveform">
-            <h2 className="audio-file-name">{fileName}</h2>
+            <h2 className="audio-file-name">{displayFileName}</h2>
             <div className="waveform-container">
                 <div ref={wavesurferRef} className="waveform" />
                 <div ref={timelineRef} className="timeline" />
             </div>
-            <div className="controls">
-                <button onClick={handleReload} disabled={!isReady} className="control-button">
-                    <ion-icon name="repeat"></ion-icon>
-                </button>
-                <button onClick={handleBackward} disabled={!isReady} className="control-button">
-                    <ion-icon name="play-back"></ion-icon> 10s
-                </button>
-                <button onClick={handlePlayPause} disabled={!isReady} className="control-button">
-                    {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
-                </button>
-                <button onClick={handleForward} disabled={!isReady} className="control-button">
-                    <ion-icon name="play-forward"></ion-icon> 10s
-                </button>
-                <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
-                    {isTrimming ? 'Trimming...' : <ion-icon name="cut"></ion-icon>}
-                </button>
-                <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
-                    {isTrimming ? 'Trimming...' : 'OUTER TRIM'}
-                </button>
-               
-                <div className="volume-control">
-                    <ion-icon name="volume-medium"></ion-icon>
-                    <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={volume}
-                        onChange={handleVolumeChange}
-                        className="volume-slider"
-                    />
+
+            <div className='waveform-controls'>
+                <div className="controls">
+                    <button onClick={handlePlayPause} id="playPauseBtn" disabled={!isReady} className="control-button">
+                        {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
+                    </button>
+                    <button onClick={handleReload} disabled={!isReady} className="control-button">
+                        <ion-icon name="return-up-back"></ion-icon>
+                    </button>
+                    <button onClick={handleBackward} disabled={!isReady} className="control-button">
+                        <ion-icon name="play-back"></ion-icon> 10s
+                    </button>
+                    
+                    <button onClick={handleForward} disabled={!isReady} className="control-button">
+                        <ion-icon name="play-forward"></ion-icon> 10s
+                    </button>
+                    <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
+                        {isTrimming ? 'Trimming...' : <ion-icon name="cut"></ion-icon>}
+                    </button>
+                    <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
+                        {isTrimming ? 'Trimming...' : 'OUTER TRIM'}
+                    </button>
+                
+                    <div className="volume-control">
+                        <ion-icon name="volume-medium"></ion-icon>
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={volume}
+                            onChange={handleVolumeChange}
+                            className="volume-slider"
+                        />
+                    </div>
+
+                    <div className="zoom-control">
+                        <ion-icon name="search"></ion-icon>
+                        <input
+                            type="range"
+                            min="1"
+                            max="100"
+                            value={zoom}
+                            onChange={handleZoomChange}
+                            className="zoom-slider"
+                        />
+                    </div>
+
+                    <button onClick={handleDownload} disabled={!isReady} className="control-button">
+                        <ion-icon name="download"></ion-icon>
+                    </button>
                 </div>
-                <div className="zoom-control">
-                    <ion-icon name="search"></ion-icon>
-                    <input
-                        type="range"
-                        min="1"
-                        max="100"
-                        value={zoom}
-                        onChange={handleZoomChange}
-                        className="zoom-slider"
-                    />
-                </div>
-                <button onClick={handleDownload} disabled={!isReady} className="control-button">
-                    <ion-icon name="download"></ion-icon>
-                </button>
             </div>
         </div>
     );
