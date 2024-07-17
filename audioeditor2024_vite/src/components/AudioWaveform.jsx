@@ -28,7 +28,7 @@ const AudioWaveform = () => {
     const updateInfoText = (text) => {
         setInfoText(text);
         // Optionally, clear the text after a few seconds
-        setTimeout(() => setInfoText(''), 4000);
+        setTimeout(() => setInfoText(''), 5000);
     };
 
     useEffect(() => {
@@ -418,7 +418,7 @@ const AudioWaveform = () => {
     return (
         <div className="audio-waveform">
             <div className='audio-info'>
-                <h2 className="audio-file-name">{displayFileName}</h2>
+                <h3 className="audio-file-name">{displayFileName}</h3>
                 <div className="info-text">{infoText}</div>
             </div>
             

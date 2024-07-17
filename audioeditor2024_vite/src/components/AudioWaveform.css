@@ -3,6 +3,10 @@
     /* ... (previous styles remain the same) */
 }
 
+.audio-file-name{
+    margin: .5rem .5rem;
+}
+
 .waveform-controls {
     position: absolute;
     z-index: 1000;
