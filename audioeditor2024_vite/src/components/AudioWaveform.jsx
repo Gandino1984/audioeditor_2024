@@ -260,6 +260,10 @@ const AudioWaveform = () => {
         }
     };
 
+    const handleMinimizeBar = () => {
+        
+    }
+
     const performTrim = (isInnerTrim) => {
         updateInfoText(`${isInnerTrim ? "Inner" : "Outer"} Trim button clicked`);
         if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
@@ -413,12 +417,15 @@ const AudioWaveform = () => {
 
     return (
         <div className="audio-waveform">
-            <h2 className="audio-file-name">{displayFileName}</h2>
+            <div className='audio-info'>
+                <h2 className="audio-file-name">{displayFileName}</h2>
+                <div className="info-text">{infoText}</div>
+            </div>
+            
             <div className="waveform-container">
                 <div ref={wavesurferRef} className="waveform" />
                 <div ref={timelineRef} className="timeline" />
             </div>
-            <div className="info-text">{infoText}</div>
             <div className='waveform-controls'>
                 <div className="controls">
                     <button onClick={handlePlayPause} id="playPauseBtn" disabled={!isReady} className="control-button">
@@ -428,11 +435,11 @@ const AudioWaveform = () => {
                         <ion-icon name="return-up-back"></ion-icon>
                     </button>
                     <button onClick={handleBackward} disabled={!isReady} className="control-button">
-                        10s<ion-icon name="play-back"></ion-icon> 
+                        <ion-icon name="caret-back">10s</ion-icon> 
                     </button>
                     
                     <button onClick={handleForward} disabled={!isReady} className="control-button">
-                        <ion-icon name="play-forward"></ion-icon> 10s
+                        <ion-icon name="caret-forward">10s</ion-icon> 
                     </button>
                     <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
                         {isTrimming ? 'Trimming...' : <ion-icon name="cut"></ion-icon>}
@@ -469,6 +476,10 @@ const AudioWaveform = () => {
                     <button onClick={handleDownload} disabled={!isReady} className="control-button">
                         <ion-icon name="download"></ion-icon>
                     </button>
+                    <button onClick={handleMinimizeBar} disabled={!isReady} className="control-button">
+                        <ion-icon name="chevron-back"></ion-icon>
+                    </button>
+                    
                 </div>
             </div>
         </div>
