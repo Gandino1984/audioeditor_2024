@@ -1,0 +1,21 @@
+.upload-btn{
+    cursor: pointer;
+    font-weight: 600;
+    appearance: none;
+    border: none;
+    background-color: #ffa500;
+    color: white;
+    font-size: 1.2rem;
+    padding: .5rem 1rem;
+    transition: 200ms ease;
+}
+
+.upload-btn:hover{
+ 
+    background-color: #396BAA;
+ 
+}
+
+.error-message{
+    color : red;
+}

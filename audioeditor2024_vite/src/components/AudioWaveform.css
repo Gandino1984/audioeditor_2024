@@ -1,0 +1,129 @@
+.audio-waveform {
+    position: relative;
+    /* ... (previous styles remain the same) */
+}
+
+.audio-file-name{
+    margin: .5rem .5rem;
+}
+
+.waveform-controls {
+    position: absolute;
+    z-index: 1000;
+    /* width: 100%; */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(48, 48, 48);
+    padding: .5rem .5rem;
+    margin-top: 1rem;
+    
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.audio-info{
+    display: flex;
+    align-items: center;
+    justify-content:left;
+    gap: 10px;
+}
+
+.info-text{
+    font-size: .75rem;
+    letter-spacing: .03rem;
+    font-style: italic;
+    color: orange;
+}
+
+.control-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background-color: orange;
+    color: white;
+    border: none;
+    /* border-radius: 50%; */
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.control-button:disabled {
+    background-color: #9E9E9E;
+    cursor: not-allowed;
+}
+
+.control-button:not(:disabled):hover {
+    background-color: #396BAA;
+    box-shadow: 0 0 10px rgba(57, 107, 170, 0.5);
+}
+
+.control-button ion-icon {
+    font-size: 1.2rem;
+}
+
+.volume-control,
+.zoom-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mute-button {
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+}
+
+.volume-slider,
+.zoom-slider {
+    -webkit-appearance: none;
+    width: 100px;
+    height: 5px;
+    background: #ccc;
+    border-radius: 2.5px;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.volume-slider:hover,
+.zoom-slider:hover {
+    opacity: 1;
+}
+
+.volume-slider::-webkit-slider-thumb,
+.zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    background: orange;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.volume-slider::-moz-range-thumb,
+.zoom-slider::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    background: orange;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.volume-slider::-webkit-slider-thumb:hover,
+.zoom-slider::-webkit-slider-thumb:hover,
+.volume-slider::-moz-range-thumb:hover,
+.zoom-slider::-moz-range-thumb:hover {
+    background-color: #396BAA;
+}
