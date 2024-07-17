@@ -2,6 +2,9 @@
 
 The `AudioWaveform` component is a React component programmed by German Andino. It is a simple interface integrated with WaveSurfer.js to visualize and interact with audio waveforms. It supports features like play/pause controls, volume adjustment, zooming, and audio trimming using regions.
 
+![imagen](https://github.com/user-attachments/assets/43010f7e-32e4-44ce-85ec-8d5e3a2dfffa)
+
+
 ## Features
 
 - Play/pause controls with waveform visualization.
