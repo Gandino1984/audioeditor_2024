@@ -40,7 +40,7 @@
     min-height: 20px;
     margin: 10px 0;
     font-style: italic; 
-    color: #396BAA;
+    color: blue;
 }
 
 .waveform-controls{
@@ -184,10 +184,6 @@
     transition: all 200ms ease;
 }
 
-.control-button ion-icon{
-    font-size: 1.3rem;
-}
-
 
 .control-button:hover{
     background-color: #396BAA; 
@@ -204,7 +200,7 @@
 }
 
 .control-button ion-icon{
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: white;
 }
 

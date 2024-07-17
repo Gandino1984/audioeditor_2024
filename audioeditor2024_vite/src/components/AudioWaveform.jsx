@@ -428,7 +428,7 @@ const AudioWaveform = () => {
                         <ion-icon name="return-up-back"></ion-icon>
                     </button>
                     <button onClick={handleBackward} disabled={!isReady} className="control-button">
-                        <ion-icon name="play-back"></ion-icon> 10s
+                        10s<ion-icon name="play-back"></ion-icon> 
                     </button>
                     
                     <button onClick={handleForward} disabled={!isReady} className="control-button">
