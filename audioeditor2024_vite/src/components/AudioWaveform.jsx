@@ -225,7 +225,6 @@ const AudioWaveform = () => {
         if (wavesurferObjRef.current && isReady) {
             const currentTime = wavesurferObjRef.current.getCurrentTime();
             const newTime = Math.min(currentTime + 10, wavesurferObjRef.current.getDuration());
-            console.log(`Moving forward from ${currentTime} to ${newTime}`);
             wavesurferObjRef.current.seekTo(newTime / wavesurferObjRef.current.getDuration());
             updateInfoText('Play head moved forward 10 seconds');
         } else {
@@ -238,7 +237,6 @@ const AudioWaveform = () => {
         if (wavesurferObjRef.current && isReady) {
             const currentTime = wavesurferObjRef.current.getCurrentTime();
             const newTime = Math.max(0, currentTime - 10);
-            console.log(`Moving backward from ${currentTime} to ${newTime}`);
             wavesurferObjRef.current.seekTo(newTime / wavesurferObjRef.current.getDuration());
             updateInfoText('Play head moved backward 10 seconds');
         } else {
@@ -265,7 +263,6 @@ const AudioWaveform = () => {
     }
 
     const performTrim = (isInnerTrim) => {
-        updateInfoText(`${isInnerTrim ? "Inner" : "Outer"} Trim button clicked`);
         if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
             const regions = regionsPluginRef.current.getRegions();
             if (regions.length === 1) {
@@ -442,10 +439,10 @@ const AudioWaveform = () => {
                         <ion-icon name="caret-forward">10s</ion-icon> 
                     </button>
                     <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
-                        {isTrimming ? 'Trimming...' : <ion-icon name="cut"></ion-icon>}
+                        <ion-icon name="cut"></ion-icon>
                     </button>
                     <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
-                        {isTrimming ? 'Trimming...' : 'OUTER TRIM'}
+                        OUTER TRIM
                     </button>
                 
                     <div className="volume-control">
