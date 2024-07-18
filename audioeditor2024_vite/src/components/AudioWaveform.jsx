@@ -7,7 +7,6 @@ import './AudioWaveform.css';
 import EnvelopePlugin from 'wavesurfer.js/dist/plugins/envelope.esm.js';
 
 const AudioWaveform = () => {
-
     const [infoText, setInfoText] = useState('');
     const [displayFileName, setDisplayFileName] = useState('');
     const wavesurferRef = useRef(null);
@@ -27,12 +26,10 @@ const AudioWaveform = () => {
 
     const updateInfoText = (text) => {
         setInfoText(text);
-        // Optionally, clear the text after a few seconds
         setTimeout(() => setInfoText(''), 5000);
     };
 
     useEffect(() => {
-        console.log("FileContext values:", { fileName, fileURL });
         setCurrentAudioURL(fileURL);
         setDisplayFileName(fileName || 'No file selected');
     }, [fileName, fileURL]);
@@ -41,9 +38,7 @@ const AudioWaveform = () => {
         setCurrentAudioURL(fileURL);
     }, [fileURL]);
 
-   
     useEffect(() => {
-        console.log("AudioWaveform mounted. currentAudioURL:", currentAudioURL);
         if (!currentAudioURL) {
             console.error("No audio URL provided");
             return;
@@ -53,17 +48,14 @@ const AudioWaveform = () => {
         const createWaveSurfer = async () => {
             if (wavesurferRef.current && !wavesurferObjRef.current && isMounted) {
                 try {
-                    regionsPluginRef.current = RegionsPlugin.create();
-                    console.log("Regions plugin created:", regionsPluginRef.current);
-
                     wavesurferObjRef.current = WaveSurfer.create({
                         container: wavesurferRef.current,
                         scrollParent: true,
                         autoCenter: true,
                         cursorColor: 'orange',
                         loopSelection: true,
-                         cursorWidth: 1.5,
-                         barWidth: 2,
+                        cursorWidth: 1.5,
+                        barWidth: 2,
                         waveColor: '#7b817f',
                         progressColor: '#9c501d',
                         responsive: true,
@@ -71,7 +63,7 @@ const AudioWaveform = () => {
                             TimelinePlugin.create({
                                 container: timelineRef.current,
                             }),
-                            regionsPluginRef.current,
+                            regionsPluginRef.current = RegionsPlugin.create(),
                             EnvelopePlugin.create({
                                 volume: 0.8,
                                 lineColor: 'white',
@@ -84,7 +76,6 @@ const AudioWaveform = () => {
                                     { time: 11.2, volume: 0.5 },
                                     { time: 15.5, volume: 0.8 },
                                 ],
-                                
                             }),
                         ],
                     });
@@ -110,30 +101,15 @@ const AudioWaveform = () => {
                     wavesurferObjRef.current.on('finish', () => isMounted && setPlaying(false));
 
                     regionsPluginRef.current.on('region-updated', (region) => {
-                        console.log("Region updated:", region);
-                        const regions = regionsPluginRef.current.getRegions();
-                        if (regions.length > 1) {
-                            regions.slice(0, -1).forEach(r => r.remove());
-                        }
-                        if (region.end > wavesurferObjRef.current.getDuration()) {
-                            region.onResize(wavesurferObjRef.current.getDuration());
-                        }
+                        handleRegionUpdate(region);
                     });
 
                     regionsPluginRef.current.on('region-created', (region) => {
-                        console.log("Region created:", region);
-                        const regions = regionsPluginRef.current.getRegions();
-                        if (regions.length > 1) {
-                            regions.slice(0, -1).forEach(r => r.remove());
-                        }
-                        if (region.end > wavesurferObjRef.current.getDuration()) {
-                            region.onResize(wavesurferObjRef.current.getDuration());
-                        }
+                        handleRegionCreated(region);
                     });
 
                     regionsPluginRef.current.enableDragSelection({
                         color: 'hsla(210, 100%, 50%, 0.4)',
-                        maxRegions: 1,
                     });
 
                     if (currentAudioURL) {
@@ -147,6 +123,7 @@ const AudioWaveform = () => {
                             }
                         }
                     }
+
                 } catch (error) {
                     if (isMounted) {
                         console.error('Error creating WaveSurfer instance:', error);
@@ -165,6 +142,45 @@ const AudioWaveform = () => {
             }
         };
     }, [currentAudioURL]);
+
+    const handleRegionUpdate = (region) => {
+        console.log("Region updated:", region);
+        const regions = regionsPluginRef.current.getRegions();
+        const nonMarkerRegions = regions.filter(r => r.end > r.start);
+        
+        if (region.end > region.start && nonMarkerRegions.length > 1) {
+            regions.forEach(r => {
+                if (r !== region && r.end > r.start) {
+                    r.remove();
+                }
+            });
+        }
+        
+        if (region.end > wavesurferObjRef.current.getDuration()) {
+            region.onResize(wavesurferObjRef.current.getDuration());
+        }
+    };
+
+    const handleRegionCreated = (region) => {
+        if (region.end > region.start) {
+            updateInfoText('New region added');
+            const regions = regionsPluginRef.current.getRegions();
+            const nonMarkerRegions = regions.filter(r => r.end > r.start);
+            
+            if (nonMarkerRegions.length > 1) {
+                nonMarkerRegions.slice(0, -1).forEach(r => r.remove());
+            }
+        } else {
+            updateInfoText('New marker added');
+            region.color = 'rgba(255, 0, 0, 0.3)';  // Red color for markers
+        }
+        
+        if (region.end > wavesurferObjRef.current.getDuration()) {
+            region.onResize(wavesurferObjRef.current.getDuration());
+        }
+    };
+
+    // ... (rest of the code remains the same)
 
     useEffect(() => {
         if (wavesurferObjRef.current && isReady) {
@@ -245,7 +261,6 @@ const AudioWaveform = () => {
         }
     };
 
-    
     const handleDownload = () => {
         if (currentAudioURL) {
             const link = document.createElement('a');
@@ -259,17 +274,29 @@ const AudioWaveform = () => {
     };
 
     const handleAddMarker = () => {
-        
+        if (wavesurferObjRef.current && isReady) {
+            const markerTime = wavesurferObjRef.current.getCurrentTime();
+            regionsPluginRef.current.addRegion({
+                start: markerTime,
+                end: markerTime,
+                color: 'blue',
+                content: `${markerTime.toFixed(1)}s`,
+                drag: false,
+                resize: false
+            });
+            updateInfoText('Marker added');
+        }
     }
 
     const performTrim = (isInnerTrim) => {
         if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
             const regions = regionsPluginRef.current.getRegions();
-            if (regions.length === 1) {
+            const trimRegion = regions.find(region => region.end > region.start);
+            
+            if (trimRegion) {
                 setIsTrimming(true);
-                const region = regions[0];
-                let start = region.start;
-                let end = region.end;
+                let start = trimRegion.start;
+                let end = trimRegion.end;
                 const currentDuration = wavesurferObjRef.current.getDuration();
                 
                 if (isTrimmed) {
@@ -288,11 +315,9 @@ const AudioWaveform = () => {
                 updateInfoText(`${isInnerTrim ? "Inner" : "Outer"} trimming audio from ${start.toFixed(1)} to ${end.toFixed(1)}`);
                 trimAudio(start, end, isInnerTrim);
             } else {
-                console.log('No region selected for trimming.');
-                updateInfoText('No region selected for trimming...');
+                updateInfoText('No valid region selected for trimming...');
             }
         } else {
-            console.log('WaveSurfer is not ready or regions plugin is not initialized.');
             updateInfoText('WaveSurfer is not ready or regions plugin is not initialized...');
         }
     };
@@ -308,7 +333,6 @@ const AudioWaveform = () => {
                 const bufferDuration = audioBuffer.duration;
                 const sampleRate = audioBuffer.sampleRate;
                 
-                // Ensure start and end are within bounds
                 start = Math.max(0, Math.min(start, bufferDuration));
                 end = Math.max(start, Math.min(end, bufferDuration));
                 
@@ -327,10 +351,8 @@ const AudioWaveform = () => {
                         const oldData = audioBuffer.getChannelData(channel);
                         const newData = newBuffer.getChannelData(channel);
                         
-                        // Copy the first part (before the trim)
                         newData.set(oldData.subarray(0, startSamples), 0);
                         
-                        // Copy the second part (after the trim)
                         const secondPartStart = Math.min(endSamples, oldData.length);
                         newData.set(oldData.subarray(secondPartStart), startSamples);
                     }
@@ -484,3 +506,4 @@ const AudioWaveform = () => {
 };
 
 export default AudioWaveform;
+
