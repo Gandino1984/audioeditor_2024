@@ -260,7 +260,7 @@ const AudioWaveform = () => {
         }
     };
 
-    const handleMinimizeBar = () => {
+    const handleAddMarker = () => {
         
     }
 
@@ -476,8 +476,8 @@ const AudioWaveform = () => {
                     <button onClick={handleDownload} disabled={!isReady} className="control-button">
                         <ion-icon name="download"></ion-icon>
                     </button>
-                    <button onClick={handleMinimizeBar} disabled={!isReady} className="control-button">
-                        <ion-icon name="chevron-back"></ion-icon>
+                    <button onClick={handleAddMarker} disabled={!isReady} className="control-button">
+                        <ion-icon name="pin"></ion-icon>
                     </button>
                     
                 </div>
