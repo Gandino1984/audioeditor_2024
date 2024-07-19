@@ -2,11 +2,13 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.js';
+import HoverPlugin from 'wavesurfer.js/dist/plugins/hover.js';
 import { FileContext } from '../contexts/fileContext';
 import './AudioWaveform.css';
 import EnvelopePlugin from 'wavesurfer.js/dist/plugins/envelope.esm.js';
 
 const AudioWaveform = () => {
+    const [showHover, setShowHover] = useState(true);
     const [infoText, setInfoText] = useState('');
     const [displayFileName, setDisplayFileName] = useState('');
     const wavesurferRef = useRef(null);
@@ -14,6 +16,8 @@ const AudioWaveform = () => {
     const timelineRef = useRef(null);
     const regionsPluginRef = useRef(null);
     const envelopeRef = useRef(null);
+    // const HoverPluginref = useRef(null);
+    
     const { fileURL, fileName} = useContext(FileContext);
     const [isReady, setIsReady] = useState(false);
     const [playing, setPlaying] = useState(false);
@@ -76,6 +80,12 @@ const AudioWaveform = () => {
                                     { time: 11.2, volume: 0.5 },
                                     { time: 15.5, volume: 0.8 },
                                 ],
+                               
+                            }),
+                            HoverPlugin.create({
+                                lineColor: '#ff0000',
+                                labelBackground: '#555',
+                                labelColor: '#fff',
                             }),
                         ],
                     });
@@ -143,6 +153,16 @@ const AudioWaveform = () => {
         };
     }, [currentAudioURL]);
 
+    const toggleHover = () => {
+        if (wavesurferObjRef.current && isReady) {
+            const hoverPlugin = wavesurferObjRef.current.getPlugin('hover');
+            if (hoverPlugin) {
+                setShowHover(!showHover);
+                hoverPlugin.setShowTime(showHover);
+            }
+        }
+    };
+
     const handleRegionUpdate = (region) => {
         console.log("Region updated:", region);
         const regions = regionsPluginRef.current.getRegions();
@@ -180,7 +200,6 @@ const AudioWaveform = () => {
         }
     };
 
-    // ... (rest of the code remains the same)
 
     useEffect(() => {
         if (wavesurferObjRef.current && isReady) {
