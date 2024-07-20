@@ -8,8 +8,8 @@
 }
 
 .waveform-controls {
-    position: absolute;
-    z-index: 1000;
+    position: relative;
+    /* z-index: 1000; */
     /* width: 100%; */
     display: flex;
     align-items: center;
@@ -24,9 +24,20 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    gap: 15px;
+    justify-content: space-around;
+    /* gap: 15px; */
+    padding: 10px;
 }
+
+
+.minimize-button {
+    position: absolute;
+    top: -20px;
+    right: 10px;
+    z-index: 10;
+}
+
+
 
 .audio-info{
     display: flex;

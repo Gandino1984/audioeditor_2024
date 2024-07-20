@@ -6,8 +6,11 @@
     import { FileContext } from '../contexts/fileContext';
     import './AudioWaveform.css';
     import EnvelopePlugin from 'wavesurfer.js/dist/plugins/envelope.esm.js';
+    import { useSpring, animated } from 'react-spring';
 
     const AudioWaveform = () => {
+
+        const [isMinimized, setIsMinimized] = useState(false);
         const [showHover, setShowHover] = useState(true);
         const [infoText, setInfoText] = useState('');
         const [displayFileName, setDisplayFileName] = useState('');
@@ -27,6 +30,18 @@
         const [isTrimming, setIsTrimming] = useState(false);
         const [isTrimmed, setIsTrimmed] = useState(false);
         const [currentAudioURL, setCurrentAudioURL] = useState(null);
+
+        
+        const controlsAnimation = useSpring({
+            height: isMinimized ? '0px' : '50px', // Adjust the height as needed
+            opacity: isMinimized ? 0 : 1,
+            overflow: 'hidden',
+        });
+        
+        const toggleMinimize = () => {
+            setIsMinimized(!isMinimized);
+        };
+        
 
         const updateInfoText = (text) => {
             setInfoText(text);
@@ -465,61 +480,67 @@
                     <div ref={timelineRef} className="timeline" />
                 </div>
                 <div className='waveform-controls'>
-                    <div className="controls">
-                        <button onClick={handlePlayPause} id="playPauseBtn" disabled={!isReady} className="control-button">
-                            {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
-                        </button>
-                        <button onClick={handleReload} disabled={!isReady} className="control-button">
-                            <ion-icon name="return-up-back"></ion-icon>
-                        </button>
-                        <button onClick={handleBackward} disabled={!isReady} className="control-button">
-                            <ion-icon name="caret-back">10s</ion-icon> 
-                        </button>
+                    <button onClick={toggleMinimize} className="control-button minimize-button">
+                        {isMinimized ? <ion-icon name="chevron-up"></ion-icon> : <ion-icon name="chevron-down"></ion-icon>}
+                    </button>
+                    <animated.div style={controlsAnimation}>
+                        <div className="controls">
+                            <button onClick={handlePlayPause} id="playPauseBtn" disabled={!isReady} className="control-button">
+                                {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
+                            </button>
+                            <button onClick={handleReload} disabled={!isReady} className="control-button">
+                                <ion-icon name="return-up-back"></ion-icon>
+                            </button>
+                            <button onClick={handleBackward} disabled={!isReady} className="control-button">
+                                <ion-icon name="caret-back">10s</ion-icon> 
+                            </button>
+                            
+                            <button onClick={handleForward} disabled={!isReady} className="control-button">
+                                <ion-icon name="caret-forward">10s</ion-icon> 
+                            </button>
+                            <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
+                                <ion-icon name="cut"></ion-icon>
+                            </button>
+                            <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
+                                OUTER TRIM
+                            </button>
                         
-                        <button onClick={handleForward} disabled={!isReady} className="control-button">
-                            <ion-icon name="caret-forward">10s</ion-icon> 
-                        </button>
-                        <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
-                            <ion-icon name="cut"></ion-icon>
-                        </button>
-                        <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
-                            OUTER TRIM
-                        </button>
-                    
-                        <div className="volume-control">
-                            <ion-icon name="volume-medium"></ion-icon>
-                            <input
-                                type="range"
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                value={volume}
-                                onChange={handleVolumeChange}
-                                className="volume-slider"
-                            />
-                        </div>
+                            <div className="volume-control">
+                                <ion-icon name="volume-medium"></ion-icon>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value={volume}
+                                    onChange={handleVolumeChange}
+                                    className="volume-slider"
+                                />
+                            </div>
 
-                        <div className="zoom-control">
-                            <ion-icon name="search"></ion-icon>
-                            <input
-                                type="range"
-                                min="1"
-                                max="100"
-                                value={zoom}
-                                onChange={handleZoomChange}
-                                className="zoom-slider"
-                            />
-                        </div>
+                            <div className="zoom-control">
+                                <ion-icon name="search"></ion-icon>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="100"
+                                    value={zoom}
+                                    onChange={handleZoomChange}
+                                    className="zoom-slider"
+                                />
+                            </div>
 
-                        <button onClick={handleDownload} disabled={!isReady} className="control-button">
-                            <ion-icon name="download"></ion-icon>
-                        </button>
-                        <button onClick={handleAddMarker} disabled={!isReady} className="control-button">
-                            <ion-icon name="pin"></ion-icon>
-                        </button>
-                        
-                    </div>
+                            <button onClick={handleDownload} disabled={!isReady} className="control-button">
+                                <ion-icon name="download"></ion-icon>
+                            </button>
+                            <button onClick={handleAddMarker} disabled={!isReady} className="control-button">
+                                <ion-icon name="pin"></ion-icon>
+                            </button>
+                            
+                        </div>
+                    </animated.div>   
                 </div>
+                
             </div>
         );
     };
