@@ -481,32 +481,38 @@
                 </div>
                 <div className='waveform-controls'>
                     <button onClick={toggleMinimize} className="control-button minimize-button">
-                        {isMinimized ? <ion-icon name="chevron-up"></ion-icon> : <ion-icon name="chevron-down"></ion-icon>}
+                        {isMinimized ? '+' : '-'}
                     </button>
                     <animated.div style={controlsAnimation}>
                         <div className="controls">
                             <button onClick={handlePlayPause} id="playPauseBtn" disabled={!isReady} className="control-button">
-                                {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>}
+                            {playing ? 'PAUSE' : 'PLAY'}
+                                {/* {playing ? <ion-icon name="pause"></ion-icon> : <ion-icon name="play"></ion-icon>} */}
                             </button>
                             <button onClick={handleReload} disabled={!isReady} className="control-button">
-                                <ion-icon name="return-up-back"></ion-icon>
+                                {/* <ion-icon name="return-up-back"></ion-icon> */}
+                                REP
                             </button>
                             <button onClick={handleBackward} disabled={!isReady} className="control-button">
-                                <ion-icon name="caret-back">10s</ion-icon> 
+                                {/* <ion-icon name="caret-back">10s</ion-icon>  */}
+                                BWD
                             </button>
                             
                             <button onClick={handleForward} disabled={!isReady} className="control-button">
-                                <ion-icon name="caret-forward">10s</ion-icon> 
+                                {/* <ion-icon name="caret-forward">10s</ion-icon>  */}
+                                FWD
                             </button>
                             <button onClick={handleInnerTrim} disabled={!isReady || isTrimming} className="control-button">
-                                <ion-icon name="cut"></ion-icon>
+                                {/* <ion-icon name="cut"></ion-icon> */}
+                                CUT
                             </button>
                             <button onClick={handleOuterTrim} disabled={!isReady || isTrimming} className="control-button">
-                                OUTER TRIM
+                                TRIM
                             </button>
                         
                             <div className="volume-control">
-                                <ion-icon name="volume-medium"></ion-icon>
+                                {/* <ion-icon name="volume-medium"></ion-icon> */}
+                                VOLUME
                                 <input
                                     type="range"
                                     min="0"
@@ -519,7 +525,8 @@
                             </div>
 
                             <div className="zoom-control">
-                                <ion-icon name="search"></ion-icon>
+                                {/* <ion-icon name="search"></ion-icon> */}
+                                ZOOM
                                 <input
                                     type="range"
                                     min="1"
@@ -530,11 +537,15 @@
                                 />
                             </div>
 
-                            <button onClick={handleDownload} disabled={!isReady} className="control-button">
-                                <ion-icon name="download"></ion-icon>
-                            </button>
+                            
                             <button onClick={handleAddMarker} disabled={!isReady} className="control-button">
-                                <ion-icon name="pin"></ion-icon>
+                                {/* <ion-icon name="pin"></ion-icon> */}
+                                MARKER
+                            </button>
+
+                            <button onClick={handleDownload} disabled={!isReady} className="control-button">
+                                {/* <ion-icon name="download"></ion-icon> */}
+                                DOWNLOAD
                             </button>
                             
                         </div>
