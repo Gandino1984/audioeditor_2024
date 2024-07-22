@@ -9,7 +9,7 @@
     import { useSpring, animated } from 'react-spring';
 
     const AudioWaveform = () => {
-
+        const [regionsVisible, setRegionsVisible] = useState(true);
         const [isMinimized, setIsMinimized] = useState(false);
         const [showHover, setShowHover] = useState(true);
         const [infoText, setInfoText] = useState('');
