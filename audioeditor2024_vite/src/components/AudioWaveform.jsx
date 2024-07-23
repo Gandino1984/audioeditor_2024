@@ -31,7 +31,28 @@
         const [isTrimmed, setIsTrimmed] = useState(false);
         const [currentAudioURL, setCurrentAudioURL] = useState(null);
 
+
+        useEffect(() => {
+            if (wavesurferObjRef.current && isReady) {
+                const regions = regionsPluginRef.current.getRegions();
+                regions.forEach(region => {
+                    region.element.style.display = regionsVisible ? 'block' : 'none';
+                });
+            }
+        }, [regionsVisible, isReady]);
+
         
+        const toggleRegionsVisibility = () => {
+            if (wavesurferObjRef.current && isReady) {
+                const regions = regionsPluginRef.current.getRegions();
+                regions.forEach(region => {
+                    region.element.style.display = regionsVisible ? 'none' : 'block';
+                });
+                setRegionsVisible(!regionsVisible);
+                updateInfoText(regionsVisible ? 'Region and markers hidden' : 'Region and markers visible');
+            }
+        };
+
         const controlsAnimation = useSpring({
             height: isMinimized ? '0px' : '50px', // Adjust the height as needed
             opacity: isMinimized ? 0 : 1,
@@ -47,6 +68,29 @@
             setInfoText(text);
             setTimeout(() => setInfoText(''), 5000);
         };
+
+        useEffect(() => {
+            if (wavesurferObjRef.current && isReady) {
+                wavesurferObjRef.current.setVolume(volume);
+                updateInfoText(`Volume set to ${volume}`);
+            }
+        }, [volume, isReady]);
+
+        useEffect(() => {
+            if (wavesurferObjRef.current && isReady) {
+                wavesurferObjRef.current.zoom(zoom);
+                updateInfoText(`Zoom set to ${zoom}`);
+            }
+        }, [zoom, isReady]);
+
+        useEffect(() => {
+            return () => {
+                if (currentAudioURL && currentAudioURL !== fileURL) {
+                    URL.revokeObjectURL(currentAudioURL);
+                }
+            };
+        }, [currentAudioURL, fileURL]);
+
 
         useEffect(() => {
             setCurrentAudioURL(fileURL);
@@ -213,30 +257,11 @@
             if (region.end > wavesurferObjRef.current.getDuration()) {
                 region.onResize(wavesurferObjRef.current.getDuration());
             }
+
+            region.element.style.display = regionsVisible ? 'block' : 'none';
         };
 
-
-        useEffect(() => {
-            if (wavesurferObjRef.current && isReady) {
-                wavesurferObjRef.current.setVolume(volume);
-                updateInfoText(`Volume set to ${volume}`);
-            }
-        }, [volume, isReady]);
-
-        useEffect(() => {
-            if (wavesurferObjRef.current && isReady) {
-                wavesurferObjRef.current.zoom(zoom);
-                updateInfoText(`Zoom set to ${zoom}`);
-            }
-        }, [zoom, isReady]);
-
-        useEffect(() => {
-            return () => {
-                if (currentAudioURL && currentAudioURL !== fileURL) {
-                    URL.revokeObjectURL(currentAudioURL);
-                }
-            };
-        }, [currentAudioURL, fileURL]);
+        
 
         const handlePlayPause = () => {
             if (wavesurferObjRef.current && isReady) {
@@ -538,9 +563,14 @@
                             </div>
 
                             
-                            <button onClick={handleAddMarker} disabled={!isReady} className="control-button">
+                            <button onClick={handleAddMarker} disabled={!isReady} className="control-button markerBtn">
                                 {/* <ion-icon name="pin"></ion-icon> */}
                                 MARKER
+                            </button>
+
+                            <button onClick={toggleRegionsVisibility} disabled={!isReady}  className="control-button toggleMarkers">
+                                {/* {regionsVisible ? <ion-icon name="eye-off"></ion-icon> : <ion-icon name="eye"></ion-icon>} */}
+                                {regionsVisible ? 'HIDE' : 'SHOW'}
                             </button>
 
                             <button onClick={handleDownload} disabled={!isReady} className="control-button">
