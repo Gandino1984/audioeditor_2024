@@ -139,8 +139,8 @@
                                     dragPointFill: 'blue',
                                     dragPointStroke: 'white',
                                     points: [
-                                        { time: 11.2, volume: 0.5 },
-                                        { time: 15.5, volume: 0.8 },
+                                        { time: 3, volume: 0.9 },
+                                        { time: 60, volume: 0.9 },
                                     ],
                                 
                                 }),
@@ -258,6 +258,20 @@
             }
 
             region.element.style.display = regionsVisible ? 'block' : 'none';
+        };
+
+        const handleRemoveMarkersAndRegions = () => {
+            if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
+                const regions = regionsPluginRef.current.getRegions();
+                if (regions.length > 0) {
+                    regions.forEach(region => region.remove());
+                    updateInfoText('All markers and regions removed');
+                } else {
+                    updateInfoText('No markers or regions to remove');
+                }
+            } else {
+                updateInfoText('WaveSurfer is not ready or regions plugin is not initialized');
+            }
         };
 
         
@@ -590,6 +604,10 @@
                             <button onClick={toggleRegionsVisibility} disabled={!isReady}  className="control-button toggleMarkers">
                                 {/* {regionsVisible ? <ion-icon name="eye-off"></ion-icon> : <ion-icon name="eye"></ion-icon>} */}
                                 {regionsVisible ? 'HIDE' : 'SHOW'}
+                            </button>
+
+                            <button onClick={handleRemoveMarkersAndRegions} disabled={!isReady} className="control-button">
+                                CLEAR
                             </button>
 
                             <button onClick={handleDownload} disabled={!isReady} className="control-button">
