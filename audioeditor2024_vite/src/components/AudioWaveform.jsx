@@ -7,8 +7,11 @@
     import './AudioWaveform.css';
     import EnvelopePlugin from 'wavesurfer.js/dist/plugins/envelope.esm.js';
     import { useSpring, animated } from 'react-spring';
+    import MinimapPlugin from 'wavesurfer.js/dist/plugins/minimap.js';
 
     const AudioWaveform = () => {
+        const [showMinimap, setShowMinimap] = useState(true);
+        const minimapRef = useRef(null);
         const [regionsVisible, setRegionsVisible] = useState(true);
         const [isMinimized, setIsMinimized] = useState(false);
         const [showHover, setShowHover] = useState(true);
@@ -146,6 +149,12 @@
                                     labelBackground: '#555',
                                     labelColor: '#fff',
                                 }),
+                                MinimapPlugin.create({
+                                    container: minimapRef.current,
+                                    waveColor: '#777',
+                                    progressColor: '#222',
+                                    height: 20,
+                                }),
                             ],
                         });
 
@@ -211,16 +220,6 @@
                 }
             };
         }, [currentAudioURL]);
-
-        const toggleHover = () => {
-            if (wavesurferObjRef.current && isReady) {
-                const hoverPlugin = wavesurferObjRef.current.getPlugin('hover');
-                if (hoverPlugin) {
-                    setShowHover(!showHover);
-                    hoverPlugin.setShowTime(showHover);
-                }
-            }
-        };
 
         const handleRegionUpdate = (region) => {
             console.log("Region updated:", region);
@@ -513,6 +512,9 @@
                     <div ref={wavesurferRef} className="waveform" />
                     <div ref={timelineRef} className="timeline" />
                 </div>
+                
+                <div ref={minimapRef} className="minimap" />
+
                 <div className='waveform-controls'>
                     <button onClick={toggleMinimize} className="control-button minimize-button">
                         {isMinimized ? '+' : '-'}

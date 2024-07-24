@@ -196,3 +196,9 @@
 .zoom-slider::-moz-range-thumb:hover {
     background-color: #396BAA;
 }
+
+.minimap {
+    margin-top: 10px;
+    height: 20px;
+    width: 100%;
+}
