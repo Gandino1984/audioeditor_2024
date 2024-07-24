@@ -280,6 +280,14 @@
             }
         };
 
+        const adjustVolume = (delta) => {
+            setVolume(prev => Math.max(0, Math.min(1, prev + delta)));
+        };
+    
+        const adjustZoom = (delta) => {
+            setZoom(prev => Math.max(1, Math.min(100, prev + delta)));
+        };
+
         const handleVolumeChange = (e) => {
             setVolume(parseFloat(e.target.value));
         };
@@ -288,6 +296,7 @@
             setZoom(parseInt(e.target.value));
         };
 
+        
         const handleOuterTrim = () => {
             performTrim(false);
         };
@@ -538,28 +547,36 @@
                             <div className="volume-control">
                                 {/* <ion-icon name="volume-medium"></ion-icon> */}
                                 VOLUME
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="1"
-                                    step="0.01"
-                                    value={volume}
-                                    onChange={handleVolumeChange}
-                                    className="volume-slider"
-                                />
+                                <div className="slider-container">
+                                    <button onClick={() => adjustVolume(-0.1)} className="slider-button">-</button>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.01"
+                                        value={volume}
+                                        onChange={handleVolumeChange}
+                                        className="volume-slider"
+                                    />
+                                    <button onClick={() => adjustVolume(0.1)} className="slider-button">+</button>
+                                </div>
                             </div>
 
                             <div className="zoom-control">
                                 {/* <ion-icon name="search"></ion-icon> */}
                                 ZOOM
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="100"
-                                    value={zoom}
-                                    onChange={handleZoomChange}
-                                    className="zoom-slider"
-                                />
+                                <div className="slider-container">
+                                    <button onClick={() => adjustZoom(-1)} className="slider-button">-</button>
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="100"
+                                        value={zoom}
+                                        onChange={handleZoomChange}
+                                        className="zoom-slider"
+                                    />
+                                    <button onClick={() => adjustZoom(1)} className="slider-button">+</button>
+                                </div>
                             </div>
 
                             
