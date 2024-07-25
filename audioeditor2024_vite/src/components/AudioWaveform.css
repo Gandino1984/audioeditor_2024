@@ -202,3 +202,29 @@
     height: 20px;
     width: 100%;
 }
+
+.marker-input-container {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.marker-input-container input {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+
+.add-marker-btn {
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.add-marker-btn:hover {
+    background-color: #45a049;
+}
