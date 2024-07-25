@@ -34,6 +34,8 @@
         const [isTrimmed, setIsTrimmed] = useState(false);
         const [currentAudioURL, setCurrentAudioURL] = useState(null);
 
+        const MARKER_TOLERANCE = 0.1; // Tolerance in seconds
+
 
         useEffect(() => {
             if (wavesurferObjRef.current && isReady) {
@@ -357,6 +359,19 @@
         const handleAddMarker = () => {
             if (wavesurferObjRef.current && isReady) {
                 const markerTime = wavesurferObjRef.current.getCurrentTime();
+                const regions = regionsPluginRef.current.getRegions();
+                
+                // Check if there's already a marker at the current position
+                const existingMarker = regions.find(region => 
+                    region.start === region.end && // It's a marker
+                    Math.abs(region.start - markerTime) < MARKER_TOLERANCE
+                );
+        
+                if (existingMarker) {
+                    updateInfoText('A marker already exists at this position');
+                    return;
+                }
+        
                 regionsPluginRef.current.addRegion({
                     start: markerTime,
                     end: markerTime,
