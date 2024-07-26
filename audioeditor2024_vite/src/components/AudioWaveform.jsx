@@ -249,8 +249,10 @@
                     return;
                 }
         
-                const description = markerDescription.trim() || `${markerTime.toFixed(1)}s`;
-                const content = `${markerTime.toFixed(1)}s\n${description}`;
+                const description = markerDescription.trim();
+                const content = description 
+                    ? `${markerTime.toFixed(1)}s\n${description}`
+                    : `${markerTime.toFixed(1)}s`;
         
                 regionsPluginRef.current.addRegion({
                     start: markerTime,
