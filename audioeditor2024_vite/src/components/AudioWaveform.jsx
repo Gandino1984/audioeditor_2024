@@ -683,37 +683,39 @@
                                 </div>
                             </div>
 
-                            <div className='marker-control'>
+                            
 
                                 <button onClick={handleAddMarker} disabled={!isReady} className="control-button markerBtn">
                                     {showMarkerInput ? 'Cancel' : 'MARKER'}
                                 </button>
-                                
-                                {showMarkerInput && (
-                                    <div className="marker-input-container">
-                                        <input
-                                            type="text"
-                                            value={markerDescription}
-                                            onChange={(e) => setMarkerDescription(e.target.value)}
-                                            placeholder="Enter marker description (max 7 words)"
-                                            maxLength={50} // Adding a character limit as an extra precaution
-                                        />
-                                        <div className="word-count">
-                                            {markerDescription.trim().split(/\s+/).filter(word => word !== '').length}/7 words
+
+                                <div className='marker-control'>    
+                                    {showMarkerInput && (
+                                        <div className="marker-input-container">
+                                            <input
+                                                type="text"
+                                                value={markerDescription}
+                                                onChange={(e) => setMarkerDescription(e.target.value)}
+                                                placeholder="Enter marker description"
+                                                maxLength={50} // Adding a character limit as an extra precaution
+                                            />
+                                            <div className="word-count">
+                                                {markerDescription.trim().split(/\s+/).filter(word => word !== '').length}/7 words
+                                            </div>
+                                            <button onClick={addMarkerWithDescription} className="add-marker-btn">Add</button>
                                         </div>
-                                        <button onClick={addMarkerWithDescription} className="add-marker-btn">Add</button>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
 
                                 <button onClick={toggleRegionsVisibility} disabled={!isReady}  className="control-button toggleMarkers">
                                     {/* {regionsVisible ? <ion-icon name="eye-off"></ion-icon> : <ion-icon name="eye"></ion-icon>} */}
                                     {regionsVisible ? 'HIDE' : 'SHOW'}
                                 </button>
 
-                                <button onClick={handleRemoveMarkersAndRegions} disabled={!isReady} className="control-button">
+                                <button onClick={handleRemoveMarkersAndRegions} disabled={!isReady} className="control-button clearMarkerBtn">
                                     CLEAR
                                 </button>
-                            </div>
+                           
 
                             <button onClick={handleDownload} disabled={!isReady} className="control-button">
                                 {/* <ion-icon name="download"></ion-icon> */}

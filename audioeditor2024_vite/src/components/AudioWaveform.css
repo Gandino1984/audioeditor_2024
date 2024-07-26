@@ -41,6 +41,7 @@
 }
 
 .control-button {
+
     user-select: none;
     display: flex;
     font-size: .9rem;
@@ -59,11 +60,19 @@
 }
 
 .toggleMarkers{
-    margin-left: 0rem;   
+    border-right: 2px solid black;
+    margin-left: 0rem;
+    margin-right: 0rem;   
 }
 
 .markerBtn{
+    border-right: 2px solid black;
    margin-right: 0; 
+}
+
+.clearMarkerBtn{
+    margin-left: 0rem;
+    margin-right: 0rem;   
 }
 
 .minimize-button {
@@ -243,4 +252,5 @@
     font-size: 0.8em;
     color: #666;
     margin-top: 5px;
+    margin-right: .5rem;
 }
