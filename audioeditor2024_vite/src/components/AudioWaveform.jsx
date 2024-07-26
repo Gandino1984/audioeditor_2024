@@ -417,45 +417,16 @@
             if (wavesurferObjRef.current && isReady) {
                 if (!showMarkerInput) {
                     // If input is not shown, show it
-                    setShowMarkerInput(!showMarkerInput);
+                    setShowMarkerInput(true);
                     updateInfoText('Add a description for the marker...');
-                    if (showMarkerInput) {
-                        addMarkerWithDescription('');
-                    }
                 } else {
-                    // If input is already shown, add the marker
-                    const markerTime = wavesurferObjRef.current.getCurrentTime();
-                    const regions = regionsPluginRef.current.getRegions();
-                    
-                    // Check if there's already a marker at the current position
-                    const existingMarker = regions.find(region => 
-                        region.start === region.end && // It's a marker
-                        Math.abs(region.start - markerTime) < MARKER_TOLERANCE
-                    );
-            
-                    if (existingMarker) {
-                        updateInfoText('A marker already exists at this position');
-                        setShowMarkerInput(false);
-                        return;
-                    }
-            
-                    const description = markerDescription.trim() || `${markerTime.toFixed(1)}s`;
-                    const content = `${markerTime.toFixed(1)}s\n${description}`;
-        
-                    regionsPluginRef.current.addRegion({
-                        start: markerTime,
-                        end: markerTime,
-                        color: 'blue',
-                        content: content,
-                        drag: false,
-                        resize: false
-                    });
-                    updateInfoText('Marker added');
-                    setMarkerDescription(''); // Clear the description after adding
-                    setShowMarkerInput(false); // Hide the input after adding the marker
+                    // If input is already shown, hide it (cancel)
+                    setShowMarkerInput(false);
+                    setMarkerDescription(''); // Clear the description
+                    updateInfoText('Marker addition cancelled');
                 }
             }
-        }
+        };
 
         const performTrim = (isInnerTrim) => {
             if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
