@@ -404,6 +404,7 @@
                 if (!showMarkerInput) {
                     // If input is not shown, show it
                     setShowMarkerInput(!showMarkerInput);
+                    updateInfoText('Add a description for the marker...');
                     if (showMarkerInput) {
                         addMarkerWithDescription('');
                     }
