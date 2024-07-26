@@ -36,17 +36,17 @@
 
         const MARKER_TOLERANCE = 0.1; // Tolerance in seconds
 
-        const MarkerDescriptionEditor = () => (
-            <div className="marker-description-editor">
-                <input
-                    type="text"
-                    value={markerDescription}
-                    onChange={(e) => setMarkerDescription(e.target.value)}
-                    placeholder="Enter marker description"
-                />
-                <button onClick={addMarkerWithDescription}>Add</button>
-            </div>
-        );
+        // const MarkerDescriptionEditor = () => (
+        //     <div className="marker-description-editor">
+        //         <input
+        //             type="text"
+        //             value={markerDescription}
+        //             onChange={(e) => setMarkerDescription(e.target.value)}
+        //             placeholder="Enter marker description"
+        //         />
+        //         <button onClick={addMarkerWithDescription}>Add</button>
+        //     </div>
+        // );
 
         useEffect(() => {
             if (wavesurferObjRef.current && isReady) {
@@ -233,6 +233,18 @@
                 }
             };
         }, [currentAudioURL]);
+
+        const handleMarkerDescriptionChange = (e) => {
+            const text = e.target.value;
+            const words = text.trim().split(/\s+/);
+            if (words.length <= 7) {
+                setMarkerDescription(text);
+            } else {
+                const limitedText = words.slice(0, 7).join(' ');
+                setMarkerDescription(limitedText);
+                updateInfoText('Marker description limited to 7 words');
+            }
+        };
 
         const addMarkerWithDescription = () => {
             if (wavesurferObjRef.current && isReady) {
@@ -671,31 +683,37 @@
                                 </div>
                             </div>
 
-                            
-                            <button onClick={handleAddMarker} disabled={!isReady} className="control-button markerBtn">
-                                {showMarkerInput ? 'Cancel' : 'MARKER'}
-                            </button>
-                            
-                            {showMarkerInput && (
-                                <div className="marker-input-container">
-                                    <input
-                                        type="text"
-                                        value={markerDescription}
-                                        onChange={(e) => setMarkerDescription(e.target.value)}
-                                        placeholder="Enter marker description"
-                                    />
-                                    <button onClick={addMarkerWithDescription} className="add-marker-btn">Add</button>
-                                </div>
-                            )}
+                            <div className='marker-control'>
 
-                            <button onClick={toggleRegionsVisibility} disabled={!isReady}  className="control-button toggleMarkers">
-                                {/* {regionsVisible ? <ion-icon name="eye-off"></ion-icon> : <ion-icon name="eye"></ion-icon>} */}
-                                {regionsVisible ? 'HIDE' : 'SHOW'}
-                            </button>
+                                <button onClick={handleAddMarker} disabled={!isReady} className="control-button markerBtn">
+                                    {showMarkerInput ? 'Cancel' : 'MARKER'}
+                                </button>
+                                
+                                {showMarkerInput && (
+                                    <div className="marker-input-container">
+                                        <input
+                                            type="text"
+                                            value={markerDescription}
+                                            onChange={(e) => setMarkerDescription(e.target.value)}
+                                            placeholder="Enter marker description (max 7 words)"
+                                            maxLength={50} // Adding a character limit as an extra precaution
+                                        />
+                                        <div className="word-count">
+                                            {markerDescription.trim().split(/\s+/).filter(word => word !== '').length}/7 words
+                                        </div>
+                                        <button onClick={addMarkerWithDescription} className="add-marker-btn">Add</button>
+                                    </div>
+                                )}
 
-                            <button onClick={handleRemoveMarkersAndRegions} disabled={!isReady} className="control-button">
-                                CLEAR
-                            </button>
+                                <button onClick={toggleRegionsVisibility} disabled={!isReady}  className="control-button toggleMarkers">
+                                    {/* {regionsVisible ? <ion-icon name="eye-off"></ion-icon> : <ion-icon name="eye"></ion-icon>} */}
+                                    {regionsVisible ? 'HIDE' : 'SHOW'}
+                                </button>
+
+                                <button onClick={handleRemoveMarkersAndRegions} disabled={!isReady} className="control-button">
+                                    CLEAR
+                                </button>
+                            </div>
 
                             <button onClick={handleDownload} disabled={!isReady} className="control-button">
                                 {/* <ion-icon name="download"></ion-icon> */}

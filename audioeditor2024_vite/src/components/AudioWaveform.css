@@ -203,6 +203,16 @@
     width: 100%;
 }
 
+.marker-control{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    z-index: 1000;
+    top: 5rem;
+
+}
+
 .marker-input-container {
     display: inline-flex;
     align-items: center;
@@ -227,4 +237,10 @@
 
 .add-marker-btn:hover {
     background-color: #45a049;
+}
+
+.word-count {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 5px;
 }
