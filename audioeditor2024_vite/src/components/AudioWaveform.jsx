@@ -10,13 +10,12 @@
     import MinimapPlugin from 'wavesurfer.js/dist/plugins/minimap.js';
 
     const AudioWaveform = () => {
+
         const [showMarkerInput, setShowMarkerInput] = useState(false);
         const [markerDescription, setMarkerDescription] = useState('');
-        const [showMinimap, setShowMinimap] = useState(true);
         const minimapRef = useRef(null);
         const [regionsVisible, setRegionsVisible] = useState(true);
         const [isMinimized, setIsMinimized] = useState(false);
-        const [showHover, setShowHover] = useState(true);
         const [infoText, setInfoText] = useState('');
         const [displayFileName, setDisplayFileName] = useState('');
         const wavesurferRef = useRef(null);
@@ -27,26 +26,12 @@
         const { fileURL, fileName} = useContext(FileContext);
         const [isReady, setIsReady] = useState(false);
         const [playing, setPlaying] = useState(false);
-        const [volume, setVolume] = useState(0.5);
         const [zoom, setZoom] = useState(1);
         const [duration, setDuration] = useState(0);
         const [isTrimming, setIsTrimming] = useState(false);
         const [isTrimmed, setIsTrimmed] = useState(false);
         const [currentAudioURL, setCurrentAudioURL] = useState(null);
-
         const MARKER_TOLERANCE = 0.1; // Tolerance in seconds
-
-        // const MarkerDescriptionEditor = () => (
-        //     <div className="marker-description-editor">
-        //         <input
-        //             type="text"
-        //             value={markerDescription}
-        //             onChange={(e) => setMarkerDescription(e.target.value)}
-        //             placeholder="Enter marker description"
-        //         />
-        //         <button onClick={addMarkerWithDescription}>Add</button>
-        //     </div>
-        // );
 
         useEffect(() => {
             if (wavesurferObjRef.current && isReady) {
@@ -56,41 +41,6 @@
                 });
             }
         }, [regionsVisible, isReady]);
-
-        
-        const toggleRegionsVisibility = () => {
-            if (wavesurferObjRef.current && isReady) {
-                const regions = regionsPluginRef.current.getRegions();
-                regions.forEach(region => {
-                    region.element.style.display = regionsVisible ? 'none' : 'block';
-                });
-                setRegionsVisible(!regionsVisible);
-                updateInfoText(regionsVisible ? 'Region and markers hidden' : 'Region and markers visible');
-            }
-        };
-
-        const controlsAnimation = useSpring({
-            height: isMinimized ? '0px' : '50px', // Adjust the height as needed
-            opacity: isMinimized ? 0 : 1,
-            overflow: 'hidden',
-        });
-        
-        const toggleMinimize = () => {
-            setIsMinimized(!isMinimized);
-        };
-        
-
-        const updateInfoText = (text) => {
-            setInfoText(text);
-            setTimeout(() => setInfoText(''), 5000);
-        };
-
-        useEffect(() => {
-            if (wavesurferObjRef.current && isReady) {
-                wavesurferObjRef.current.setVolume(volume);
-                updateInfoText(`Volume set to ${volume}`);
-            }
-        }, [volume, isReady]);
 
         useEffect(() => {
             if (wavesurferObjRef.current && isReady) {
@@ -106,7 +56,6 @@
                 }
             };
         }, [currentAudioURL, fileURL]);
-
 
         useEffect(() => {
             setCurrentAudioURL(fileURL);
@@ -234,17 +183,32 @@
             };
         }, [currentAudioURL]);
 
-        const handleMarkerDescriptionChange = (e) => {
-            const text = e.target.value;
-            const words = text.trim().split(/\s+/);
-            if (words.length <= 7) {
-                setMarkerDescription(text);
-            } else {
-                const limitedText = words.slice(0, 7).join(' ');
-                setMarkerDescription(limitedText);
-                updateInfoText('Marker description limited to 7 words');
+        const toggleRegionsVisibility = () => {
+            if (wavesurferObjRef.current && isReady) {
+                const regions = regionsPluginRef.current.getRegions();
+                regions.forEach(region => {
+                    region.element.style.display = regionsVisible ? 'none' : 'block';
+                });
+                setRegionsVisible(!regionsVisible);
+                updateInfoText(regionsVisible ? 'Region and markers hidden' : 'Region and markers visible');
             }
         };
+
+        const controlsAnimation = useSpring({
+            height: isMinimized ? '0px' : '50px', // Adjust the height as needed
+            opacity: isMinimized ? 0 : 1,
+            overflow: 'hidden',
+        });
+        
+        const toggleMinimize = () => {
+            setIsMinimized(!isMinimized);
+        };
+        
+        const updateInfoText = (text) => {
+            setInfoText(text);
+            setTimeout(() => setInfoText(''), 5000);
+        };
+
 
         const addMarkerWithDescription = () => {
             if (wavesurferObjRef.current && isReady) {
@@ -334,7 +298,6 @@
         };
 
         
-
         const handlePlayPause = () => {
             if (wavesurferObjRef.current && isReady) {
                 wavesurferObjRef.current.playPause();
@@ -352,16 +315,9 @@
             }
         };
 
-        const adjustVolume = (delta) => {
-            setVolume(prev => Math.max(0, Math.min(1, prev + delta)));
-        };
     
         const adjustZoom = (delta) => {
             setZoom(prev => Math.max(1, Math.min(100, prev + delta)));
-        };
-
-        const handleVolumeChange = (e) => {
-            setVolume(parseFloat(e.target.value));
         };
 
         const handleZoomChange = (e) => {
@@ -619,8 +575,7 @@
                                 TRIM
                             </button>
                         
-                            <div className="volume-control">
-                                {/* <ion-icon name="volume-medium"></ion-icon> */}
+                            {/* <div className="volume-control">
                                 VOLUME
                                 <div className="slider-container">
                                     <button onClick={() => adjustVolume(-0.1)} className="slider-button">-</button>
@@ -635,7 +590,7 @@
                                     />
                                     <button onClick={() => adjustVolume(0.1)} className="slider-button">+</button>
                                 </div>
-                            </div>
+                            </div> */}
 
                             <div className="zoom-control">
                                 {/* <ion-icon name="search"></ion-icon> */}
