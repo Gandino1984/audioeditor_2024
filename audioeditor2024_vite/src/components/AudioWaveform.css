@@ -41,6 +41,7 @@
 }
 
 .control-button {
+
     user-select: none;
     display: flex;
     font-size: .9rem;
@@ -59,11 +60,19 @@
 }
 
 .toggleMarkers{
-    margin-left: 0rem;   
+    border-right: 2px solid black;
+    margin-left: 0rem;
+    margin-right: 0rem;   
 }
 
 .markerBtn{
+    border-right: 2px solid black;
    margin-right: 0; 
+}
+
+.clearMarkerBtn{
+    margin-left: 0rem;
+    margin-right: 0rem;   
 }
 
 .minimize-button {
@@ -201,4 +210,47 @@
     margin-top: 10px;
     height: 20px;
     width: 100%;
+}
+
+.marker-control{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    z-index: 1000;
+    top: 5rem;
+
+}
+
+.marker-input-container {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.marker-input-container input {
+    padding: 5px;
+    border: 1px solid #ccc;
+    margin-right: 5px;
+}
+
+.add-marker-btn {
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-left: .2rem;
+    margin-right: 2rem;
+}
+
+.add-marker-btn:hover {
+    background-color: #45a049;
+}
+
+.word-count {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 5px;
+    margin-right: .5rem;
 }

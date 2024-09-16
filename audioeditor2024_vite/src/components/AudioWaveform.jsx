@@ -10,6 +10,8 @@
     import MinimapPlugin from 'wavesurfer.js/dist/plugins/minimap.js';
 
     const AudioWaveform = () => {
+        const [showMarkerInput, setShowMarkerInput] = useState(false);
+        const [markerDescription, setMarkerDescription] = useState('');
         const [showMinimap, setShowMinimap] = useState(true);
         const minimapRef = useRef(null);
         const [regionsVisible, setRegionsVisible] = useState(true);
@@ -22,8 +24,6 @@
         const timelineRef = useRef(null);
         const regionsPluginRef = useRef(null);
         const envelopeRef = useRef(null);
-        // const HoverPluginref = useRef(null);
-        
         const { fileURL, fileName} = useContext(FileContext);
         const [isReady, setIsReady] = useState(false);
         const [playing, setPlaying] = useState(false);
@@ -34,6 +34,19 @@
         const [isTrimmed, setIsTrimmed] = useState(false);
         const [currentAudioURL, setCurrentAudioURL] = useState(null);
 
+        const MARKER_TOLERANCE = 0.1; // Tolerance in seconds
+
+        // const MarkerDescriptionEditor = () => (
+        //     <div className="marker-description-editor">
+        //         <input
+        //             type="text"
+        //             value={markerDescription}
+        //             onChange={(e) => setMarkerDescription(e.target.value)}
+        //             placeholder="Enter marker description"
+        //         />
+        //         <button onClick={addMarkerWithDescription}>Add</button>
+        //     </div>
+        // );
 
         useEffect(() => {
             if (wavesurferObjRef.current && isReady) {
@@ -139,8 +152,8 @@
                                     dragPointFill: 'blue',
                                     dragPointStroke: 'white',
                                     points: [
-                                        { time: 11.2, volume: 0.5 },
-                                        { time: 15.5, volume: 0.8 },
+                                        { time: 3, volume: 0.9 },
+                                        { time: 60, volume: 0.9 },
                                     ],
                                 
                                 }),
@@ -221,6 +234,52 @@
             };
         }, [currentAudioURL]);
 
+        const handleMarkerDescriptionChange = (e) => {
+            const text = e.target.value;
+            const words = text.trim().split(/\s+/);
+            if (words.length <= 7) {
+                setMarkerDescription(text);
+            } else {
+                const limitedText = words.slice(0, 7).join(' ');
+                setMarkerDescription(limitedText);
+                updateInfoText('Marker description limited to 7 words');
+            }
+        };
+
+        const addMarkerWithDescription = () => {
+            if (wavesurferObjRef.current && isReady) {
+                const markerTime = wavesurferObjRef.current.getCurrentTime();
+                const regions = regionsPluginRef.current.getRegions();
+                
+                const existingMarker = regions.find(region => 
+                    region.start === region.end && 
+                    Math.abs(region.start - markerTime) < MARKER_TOLERANCE
+                );
+        
+                if (existingMarker) {
+                    updateInfoText('A marker already exists at this position');
+                    return;
+                }
+        
+                const description = markerDescription.trim();
+                const content = description 
+                    ? `${markerTime.toFixed(1)}s\n${description}`
+                    : `${markerTime.toFixed(1)}s`;
+        
+                regionsPluginRef.current.addRegion({
+                    start: markerTime,
+                    end: markerTime,
+                    color: 'blue',
+                    content: content,
+                    drag: false,
+                    resize: false
+                });
+                updateInfoText('Marker added');
+                setMarkerDescription(''); // Clear the description after adding
+                setShowMarkerInput(false); // Hide the input after adding the marker
+            }
+        };
+
         const handleRegionUpdate = (region) => {
             console.log("Region updated:", region);
             const regions = regionsPluginRef.current.getRegions();
@@ -258,6 +317,20 @@
             }
 
             region.element.style.display = regionsVisible ? 'block' : 'none';
+        };
+
+        const handleRemoveMarkersAndRegions = () => {
+            if (wavesurferObjRef.current && isReady && regionsPluginRef.current) {
+                const regions = regionsPluginRef.current.getRegions();
+                if (regions.length > 0) {
+                    regions.forEach(region => region.remove());
+                    updateInfoText('All markers and regions removed');
+                } else {
+                    updateInfoText('No markers or regions to remove');
+                }
+            } else {
+                updateInfoText('WaveSurfer is not ready or regions plugin is not initialized');
+            }
         };
 
         
@@ -342,16 +415,45 @@
 
         const handleAddMarker = () => {
             if (wavesurferObjRef.current && isReady) {
-                const markerTime = wavesurferObjRef.current.getCurrentTime();
-                regionsPluginRef.current.addRegion({
-                    start: markerTime,
-                    end: markerTime,
-                    color: 'blue',
-                    content: `${markerTime.toFixed(1)}s`,
-                    drag: false,
-                    resize: false
-                });
-                updateInfoText('Marker added');
+                if (!showMarkerInput) {
+                    // If input is not shown, show it
+                    setShowMarkerInput(!showMarkerInput);
+                    updateInfoText('Add a description for the marker...');
+                    if (showMarkerInput) {
+                        addMarkerWithDescription('');
+                    }
+                } else {
+                    // If input is already shown, add the marker
+                    const markerTime = wavesurferObjRef.current.getCurrentTime();
+                    const regions = regionsPluginRef.current.getRegions();
+                    
+                    // Check if there's already a marker at the current position
+                    const existingMarker = regions.find(region => 
+                        region.start === region.end && // It's a marker
+                        Math.abs(region.start - markerTime) < MARKER_TOLERANCE
+                    );
+            
+                    if (existingMarker) {
+                        updateInfoText('A marker already exists at this position');
+                        setShowMarkerInput(false);
+                        return;
+                    }
+            
+                    const description = markerDescription.trim() || `${markerTime.toFixed(1)}s`;
+                    const content = `${markerTime.toFixed(1)}s\n${description}`;
+        
+                    regionsPluginRef.current.addRegion({
+                        start: markerTime,
+                        end: markerTime,
+                        color: 'blue',
+                        content: content,
+                        drag: false,
+                        resize: false
+                    });
+                    updateInfoText('Marker added');
+                    setMarkerDescription(''); // Clear the description after adding
+                    setShowMarkerInput(false); // Hide the input after adding the marker
+                }
             }
         }
 
@@ -582,15 +684,38 @@
                             </div>
 
                             
-                            <button onClick={handleAddMarker} disabled={!isReady} className="control-button markerBtn">
-                                {/* <ion-icon name="pin"></ion-icon> */}
-                                MARKER
-                            </button>
 
-                            <button onClick={toggleRegionsVisibility} disabled={!isReady}  className="control-button toggleMarkers">
-                                {/* {regionsVisible ? <ion-icon name="eye-off"></ion-icon> : <ion-icon name="eye"></ion-icon>} */}
-                                {regionsVisible ? 'HIDE' : 'SHOW'}
-                            </button>
+                                <button onClick={handleAddMarker} disabled={!isReady} className="control-button markerBtn">
+                                    {showMarkerInput ? 'Cancel' : 'MARKER'}
+                                </button>
+
+                                <div className='marker-control'>    
+                                    {showMarkerInput && (
+                                        <div className="marker-input-container">
+                                            <input
+                                                type="text"
+                                                value={markerDescription}
+                                                onChange={(e) => setMarkerDescription(e.target.value)}
+                                                placeholder="Enter marker description"
+                                                maxLength={50} // Adding a character limit as an extra precaution
+                                            />
+                                            <div className="word-count">
+                                                {markerDescription.trim().split(/\s+/).filter(word => word !== '').length}/7 words
+                                            </div>
+                                            <button onClick={addMarkerWithDescription} className="add-marker-btn">Add</button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button onClick={toggleRegionsVisibility} disabled={!isReady}  className="control-button toggleMarkers">
+                                    {/* {regionsVisible ? <ion-icon name="eye-off"></ion-icon> : <ion-icon name="eye"></ion-icon>} */}
+                                    {regionsVisible ? 'HIDE' : 'SHOW'}
+                                </button>
+
+                                <button onClick={handleRemoveMarkersAndRegions} disabled={!isReady} className="control-button clearMarkerBtn">
+                                    CLEAR
+                                </button>
+                           
 
                             <button onClick={handleDownload} disabled={!isReady} className="control-button">
                                 {/* <ion-icon name="download"></ion-icon> */}
